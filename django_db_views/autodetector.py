@@ -8,8 +8,8 @@ from django.db.migrations.autodetector import MigrationAutodetector
 from django.db.migrations.graph import MigrationGraph
 
 from django_db_views.db_view import DBView
-from django_db_views.db_views.operations import ViewRunPython
-from django_db_views.db_views.migration_functions import ForwardViewMigration, BackwardViewMigration
+from django_db_views.operations import ViewRunPython
+from django_db_views.migration_functions import ForwardViewMigration, BackwardViewMigration
 
 
 class ViewMigrationAutoDetector(MigrationAutodetector):
