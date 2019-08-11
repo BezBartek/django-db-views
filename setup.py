@@ -1,5 +1,5 @@
 import pathlib
-from setuptools import setup
+from setuptools import setup, find_packages
 
 # The directory containing this file
 HERE = pathlib.Path(__file__).parent
@@ -25,7 +25,7 @@ setup(
         "Programming Language :: Python :: 3",
         "Programming Language :: Python :: 3.7",
     ],
-    packages=["django_db_views"],
+    packages=find_packages(),
     include_package_data=True,
     install_requires=["Django", "six"],
     entry_points={},
