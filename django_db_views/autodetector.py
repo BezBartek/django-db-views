@@ -13,8 +13,17 @@ from django_db_views.migration_functions import ForwardViewMigration, BackwardVi
 
 
 class ViewMigrationAutoDetector(MigrationAutodetector):
-
+    """
+        We overwritten only _detect_changes function.
+        It's almost same code as in regular function,
+        we just removed generating other operations, and instead of them added our detection.
+        rest methods are fully our code which we use for detection.
+        It's detect only view model changes.
+    """
     def _detect_changes(self, convert_apps=None, graph=None)->dict:
+
+        # <START copy paste from MigrationAutodetector>
+
         self.generated_operations = {}
         self.altered_indexes = {}
 
@@ -52,14 +61,17 @@ class ViewMigrationAutoDetector(MigrationAutodetector):
                 else:
                     self.new_model_keys.append((al, mn))
 
-        # Renames have to come first
+        # <END of copy paste from MigrationAutodetector>
+
         self.generate_views_operations(graph)
 
+        # <START copy paste from MigrationAutodetector>
         self._sort_migrations()
         self._build_migration_list(graph)
         self._optimize_migrations()
 
         return self.migrations
+        # <END end of copy paste from MigrationAutodetector>
 
     def get_view_models(self)->dict:
         view_models = {}
@@ -130,6 +142,7 @@ class ViewMigrationAutoDetector(MigrationAutodetector):
         return None
 
     def get_current_view_definition_from_database(self, table_name: str)->str:
+        """working only with postgres"""
         with connection.cursor() as cursor:
             try:
                 cursor.execute("SELECT pg_get_viewdef('%s')" % table_name)

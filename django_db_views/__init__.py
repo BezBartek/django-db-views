@@ -1,2 +1,2 @@
 # version
-__verstion__ = "0.0.1"
+__verstion__ = "0.0.2"
