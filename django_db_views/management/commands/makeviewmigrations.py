@@ -92,3 +92,6 @@ class ViewMigrationsCommand(MakemigrationsCommand):
                 has_bad_labels = True
         if has_bad_labels:
             sys.exit(2)
+
+
+Command = MakemigrationsCommand
