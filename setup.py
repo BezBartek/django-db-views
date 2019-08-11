@@ -16,7 +16,7 @@ setup(
                 "All changes from models are detected automatically.",
     long_description=README,
     long_description_content_type="text/markdown",
-    url="https://github.com/realpython/reader",
+    url="https://github.com/BezBartek/django-db-views",
     author="Bartłomiej Nowak and Mariusz Okulanis",
     author_email="n.bartek3762@gmail.com",
     license="MIT",
