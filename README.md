@@ -1,8 +1,8 @@
 # django-db-views
 
 ### How to use?
-   - add to installed apps
-   - use **makeviewmigrations** command to create migrations for view models
+   - add `django_db_views` to `INSTALLED_APPS`
+   - use `makeviewmigrations` command to create migrations for view models
 
 
 ### How to create view in your database?
@@ -20,7 +20,7 @@
         
         view_definition = """
             SELECT
-                row_number() over () as id,
+                row_number() over () as id,  # Django requires column called id
                 virtual_card.id as virtual_card_id,
                 sum(...) as total_discount,
             ...
@@ -31,10 +31,11 @@
             db_table = 'virtual_card_balance'
 
 ### How view migrations work?
-   - It's using Django code, migrate looks like regular migration. 
-   - It's relies on db_table names. 
-   - **makeviewmigrations**  command find previous migration for table.
+   - It's using Django code, view-migrations looks like regular migrations. 
+   - It's relies on `db_table` names. 
+   - `makeviewmigrations` command finds previous migration for view.
       - if there is no such migration, than script create new migration
-      - if previous migration exist, than script will use previous view_definition for backward operation, and create new migration.
+      - if previous migration exists but no change in `view_definition` is detected nothing is done
+      - if previous migration exists, then script will use previous `view_definition` for backward operation, and creates new migration.
 
-Tested which live project based on Django 1.11.5
+Tested with live project based on Django 1.11.5
