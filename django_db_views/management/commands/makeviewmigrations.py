@@ -81,12 +81,8 @@ class Command(MakemigrationsCommand):
                 else:
                     self.stdout.write("No changes detected")
 
-            if self.exit_code:
-                sys.exit(1)
         else:
             self.write_migration_files(changes)
-            if check_changes:
-                sys.exit(1)
 
     def validate_applications(self, app_labels: list):
         """it's copy paste from make migration command"""
