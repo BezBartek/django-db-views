@@ -22,19 +22,19 @@
             SELECT
                 row_number() over () as id,
                 virtual_card.id as virtual_card_id,
-                sum(usage.discount_amount) as total_discount,
+                sum(...) as total_discount,
             ...
         """
     
         class Meta:
             managed = False
-            db_table = 'offerings_coupon_balance'
+            db_table = 'virtual_card_balance'
 
 ### How view migrations work?
    - It's using Django code, migrate looks like regular migration. 
    - It's relies on db_table names. 
-   - Our command find previous migration for table.
-      - if there is no such migration, than they create new migration
+   - **makeviewmigrations**  command find previous migration for table.
+      - if there is no such migration, than script create new migration
       - if previous migration exist, than script will use previous view_definition for backward operation, and create new migration.
 
 Tested which live project based on Django 1.11.5
