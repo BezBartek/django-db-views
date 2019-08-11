@@ -13,7 +13,7 @@ setup(
     version="0.0.1",
     description="Handle database views. "
                 "Allow to create views migrations. "
-                "Migrations uses django engine. "
+                "View migrations using django code. "
                 "They can be reversed. "
                 "Changes in views definition are detected automatically. "
                 "Support almost all options as regular makemigrations command",
