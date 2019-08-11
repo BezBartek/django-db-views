@@ -1,5 +1,8 @@
 # django-db-views
 
+### How to install?
+  - `pip install django-db-views`
+
 ### How to use?
    - add `django_db_views` to `INSTALLED_APPS`
    - use `makeviewmigrations` command to create migrations for view models

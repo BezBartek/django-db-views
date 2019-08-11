@@ -11,10 +11,11 @@ README = (HERE / "README.md").read_text()
 setup(
     name="django-db-views",
     version="0.0.1",
-    description="Allow to create view migrations for view models. "
+    description="Handle database views. "
+                "Allow to create views migrations. "
                 "Migrations uses django engine. "
-                "They can be reversed, (they remember previous view definition). "
-                "View definition changes inside view models are detected automatically."
+                "They can be reversed. "
+                "Changes in views definition are detected automatically. "
                 "Support almost all options as regular makemigrations command",
     long_description=README,
     long_description_content_type="text/markdown",
