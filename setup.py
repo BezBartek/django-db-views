@@ -12,8 +12,10 @@ setup(
     name="django-db-views",
     version="0.0.1",
     description="Allow to create view migrations for models. "
-                "Migrations uses django engine, they can reversed, to back to previous view structure. "
-                "All changes from models are detected automatically.",
+                "Migrations uses django engine. "
+                "They can be reversed, (they remember previous view definition). "
+                "All changes inside view models are detected automatically."
+                "Support almost all options as regular makemigrations command",
     long_description=README,
     long_description_content_type="text/markdown",
     url="https://github.com/BezBartek/django-db-views",

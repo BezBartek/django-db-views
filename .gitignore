@@ -1,2 +1,7 @@
 __pycache__/
 /.idea
+
+# from build
+build/
+*.egg-info/
+dist/
