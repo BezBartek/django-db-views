@@ -94,4 +94,4 @@ class ViewMigrationsCommand(MakemigrationsCommand):
             sys.exit(2)
 
 
-Command = MakemigrationsCommand
+Command = ViewMigrationsCommand
