@@ -127,10 +127,10 @@ class ViewMigrationAutoDetector(MigrationAutodetector):
         while last_node:
             migration = graph.nodes[last_node]
             if migration.operations:
-                if len(migration.operations) == 1:
-                    if isinstance(migration.operations[0], ViewRunPython):
-                        table_name = migration.operations[0].code.table_name
-                        previous_view_definition = migration.operations[0].code.view_definition
+                for operation in migration.operations:
+                    if isinstance(operation, ViewRunPython):
+                        table_name = operation.code.table_name
+                        previous_view_definition = operation.code.view_definition
                         if table_name == for_table_name:
                             return previous_view_definition.strip()
             # right now i get only migrations from the same app.
