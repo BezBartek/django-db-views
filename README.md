@@ -35,9 +35,9 @@
 
 ### How view migrations work?
    - It's using Django code, view-migrations looks like regular migrations. 
-   - It's relies on `db_table` names. 
+   - It relies on `db_table` names. 
    - `makeviewmigrations` command finds previous migration for view.
-      - if there is no such migration, than script create new migration
+      - if there is no such migration then script create a new migration
       - if previous migration exists but no change in `view_definition` is detected nothing is done
       - if previous migration exists, then script will use previous `view_definition` for backward operation, and creates new migration.
 
