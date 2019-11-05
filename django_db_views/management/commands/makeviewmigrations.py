@@ -33,6 +33,10 @@ class Command(MakemigrationsCommand):
             help="Use this name for migration file(s).",
         )   # Working
         parser.add_argument(
+            '--no-header', action='store_false', dest='include_header',
+            help='Do not add header comments to new migration file(s).',
+        )
+        parser.add_argument(
             '--check', action='store_true', dest='check_changes',
             help='Exit with a non-zero status if model changes are missing migrations.',
         )   # we need that?
@@ -43,6 +47,7 @@ class Command(MakemigrationsCommand):
         self.dry_run = options['dry_run']
         self.merge = options['merge']
         self.migration_name = options['name']
+        self.include_header = options['include_header']
         check_changes = options['check_changes']
 
         # validation application labels
