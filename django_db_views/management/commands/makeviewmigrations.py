@@ -34,7 +34,7 @@ class Command(MakemigrationsCommand):
         )   # Working
         parser.add_argument(
             '--no-header', action='store_false', dest='include_header',
-            help='Do not add header comments to new migration file(s).',
+            help='Do not add header comments to new migration file(s). (working only with Django 2.2)',
         )
         parser.add_argument(
             '--check', action='store_true', dest='check_changes',
