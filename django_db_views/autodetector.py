@@ -115,8 +115,8 @@ class ViewMigrationAutoDetector(MigrationAutodetector):
                 self.add_operation(
                     app_label,
                     ViewRunPython(
-                        ForwardViewMigration(new_view_definition, view_model._meta.db_table),
-                        BackwardViewMigration(current_view_definition, view_model._meta.db_table),
+                        ForwardViewMigration(new_view_definition.strip(";"), view_model._meta.db_table),
+                        BackwardViewMigration(current_view_definition.strip(";"), view_model._meta.db_table),
                         atomic=False
                     ),
                     dependencies=dependencies,
