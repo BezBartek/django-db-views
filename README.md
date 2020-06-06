@@ -33,7 +33,8 @@
             managed = False
             db_table = 'virtual_card_balance'
 
-### How view migrations work?
+### How view migrations work? 
+   - DBView working as regular django model. You can use it in any query. 
    - It's using Django code, view-migrations looks like regular migrations. 
    - It relies on `db_table` names. 
    - `makeviewmigrations` command finds previous migration for view.
@@ -41,4 +42,4 @@
       - if previous migration exists but no change in `view_definition` is detected nothing is done
       - if previous migration exists, then script will use previous `view_definition` for backward operation, and creates new migration.
 
-Tested with live project based on Django 1.11.5
+Tested with live projects based on Django: 1.11.5, 2.2.10
