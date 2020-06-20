@@ -102,8 +102,7 @@ class ViewMigrationAutoDetector(MigrationAutodetector):
             current_view_definition = self.get_previous_view_definition_state(
                 graph, app_label, view_model._meta.db_table
             )
-
-            new_view_definition = view_model.view_definition.strip()
+            new_view_definition = self.get_view_definition_from_model(view_model)
             if not self.is_same_views(current_view_definition, new_view_definition):
                 # Depend on all bases
                 model_state = self.to_state.models[app_label, model_name]
@@ -121,6 +120,15 @@ class ViewMigrationAutoDetector(MigrationAutodetector):
                     ),
                     dependencies=dependencies,
                 )
+
+    def get_view_definition_from_model(self, view_model: DBView) -> str:
+        if callable(view_model.view_definition):
+            view_definition = view_model.view_definition()
+        else:
+            view_definition = view_model.view_definition
+        assert isinstance(view_definition, str),\
+            "View definition must be callable and return string or be itself a string."
+        return view_definition.strip()
 
     def get_previous_view_definition_state(self, graph: MigrationGraph, app_label: str, for_table_name: str):
         last_node = graph.leaf_nodes(app_label)[0]
