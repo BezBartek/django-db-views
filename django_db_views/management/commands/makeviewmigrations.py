@@ -51,6 +51,7 @@ class Command(MakemigrationsCommand):
         check_changes = options['check_changes']
 
         # validation application labels
+        app_labels = set(app_labels)
         self.validate_applications(app_labels)
 
         # we don't check conflicts as regular makemigrations command.
@@ -89,9 +90,8 @@ class Command(MakemigrationsCommand):
         else:
             self.write_migration_files(changes)
 
-    def validate_applications(self, app_labels: list):
+    def validate_applications(self, app_labels: set):
         """it's copy paste from make migration command"""
-        app_labels = set(app_labels)
         has_bad_labels = False
         for app_label in app_labels:
             try:

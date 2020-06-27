@@ -131,7 +131,8 @@ class ViewMigrationAutoDetector(MigrationAutodetector):
         return view_definition.strip()
 
     def get_previous_view_definition_state(self, graph: MigrationGraph, app_label: str, for_table_name: str):
-        last_node = graph.leaf_nodes(app_label)[0]
+        nodes = graph.leaf_nodes(app_label)
+        last_node = nodes[0] if nodes else None
 
         while last_node:
             migration = graph.nodes[last_node]
@@ -148,7 +149,7 @@ class ViewMigrationAutoDetector(MigrationAutodetector):
                 last_node = app_parents[-1]
             else:   # if no parents mean we found initial migration
                 last_node = None
-        return None
+        return ""
 
     def get_current_view_definition_from_database(self, table_name: str)->str:
         """working only with postgres"""
