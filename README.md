@@ -13,6 +13,7 @@
 - To create your view use DBView class, remember to set view definition attribute.
 
 
+
     from django_db_views.db_view import DBView
     
     class Balance(DBView):
@@ -37,11 +38,14 @@
             db_table = 'virtual_card_balance'
 
 
+
 - The view definition must be a string or a callable. 
 Callable view definition example:
 
 
+
     view_definition = lambda: str(SomeModel.objects.all().query)
+
 
 
 using callable allow you to write view definition using ORM. 
