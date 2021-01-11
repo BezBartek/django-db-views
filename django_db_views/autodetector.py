@@ -149,7 +149,8 @@ class ViewMigrationAutoDetector(MigrationAutodetector):
                     if isinstance(operation, ViewRunPython):
                         table_name = operation.code.table_name
                         previous_view_definition = operation.code.view_definition
-                        previous_view_engine = operation.code.view_engine if operation.code.view_engine \
+                        previous_view_engine = operation.code.view_engine \
+                            if hasattr(operation.code, 'view_engine') and operation.code.view_engine \
                             else settings.DATABASES['default']['ENGINE']
                         if table_name == for_table_name and previous_view_engine == engine:
                             return previous_view_definition.strip()

@@ -1,32 +1,53 @@
 from django.db import models
+from django.utils import timezone
 from django_db_views.db_view import DBView
 
 
-class Balance(DBView):
-    virtual_card = models.ForeignKey(
-        'VirtualCard', on_delete=models.DO_NOTHING, related_name='virtual_cards'
-    )
-    total_discount = models.DecimalField(max_digits=12, decimal_places=2)
-    total_returns = models.DecimalField(max_digits=12, decimal_places=2)
-    balance = models.DecimalField(max_digits=12, decimal_places=2)
+class Choice(models.Model):
+    question = models.ForeignKey("Question", on_delete=models.CASCADE)
+    text = models.CharField(max_length=200)
+    votes = models.IntegerField(default=0)
 
-    view_definition = """
-          SELECT
-              row_number() over () as id,  # Django requires column called id
-              virtual_card.id as virtual_card_id,
-              sum(...) as total_discount,
-          ...
-      """
+    class Meta:
+        db_table = "choice"
+
+
+class QuestionStat(DBView):
+    id = models.AutoField(primary_key=True)
+    question = models.ForeignKey(
+        "Question", on_delete=models.DO_NOTHING, related_name="question"
+    )
+    total_choices = models.IntegerField()
+
+    view_definition = {
+        "django.db.backends.sqlite3": """
+              SELECT
+                  row_number() over () as id,
+                  q.id as question_id,
+                  count(*) as total_choices
+              FROM question q
+                JOIN choice c on c.question_id = q.id
+              GROUP BY q.id
+            """,
+        "django.db.backends.postgresql": """
+            SELECT
+                row_number() over () as id,
+                q.id as question_id,
+                count(*) as total_choices
+            FROM question q
+              JOIN choice c on c.question_id = q.id
+            GROUP BY q.id
+        """,
+    }
 
     class Meta:
         managed = False
-        db_table = 'virtual_card_balance'
+        db_table = "question_stat"
 
 
-class VirtualCard(models.Model):
-    id = models.AutoField(primary_key=True)
-    name = models.CharField(max_length=80, blank=False)
+class Question(models.Model):
+    text = models.CharField(max_length=200)
+    created = models.DateTimeField(default=timezone.now)
 
     class Meta:
-        managed = True
-        db_table = 'virtual_card'
+        db_table = "question"

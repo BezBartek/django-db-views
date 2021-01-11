@@ -7,5 +7,6 @@ DATABASES = {
 }
 INSTALLED_APPS = [
     'django_db_views',
+    'migrations',
     'tests',
 ]

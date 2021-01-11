@@ -6,6 +6,8 @@ from django.apps import apps
 from django.conf import settings
 from django.db.migrations.loader import MigrationLoader
 from django.db.migrations.state import ProjectState
+from django.db.migrations.recorder import MigrationRecorder
+from django.db import connections
 from django.core.management import call_command
 from django.test import TransactionTestCase, override_settings
 
@@ -13,21 +15,43 @@ os.environ['DJANGO_SETTINGS_MODULE'] = 'test_settings'
 django.setup()
 
 
-class MigrateTests(TransactionTestCase):
-    @patch('django_db_views.autodetector.ViewMigrationAutoDetector.generate_views_operations')
-    def test_makeviewmigrations_calls_generate_views_operations(self, mock_generate_views_operations):
-        call_command('makeviewmigrations')
-        self.assertTrue(mock_generate_views_operations.called)
+class MigrationTests(TransactionTestCase):
 
-    def test_view_definition_with_dict_type(self):
-        from django_db_views.autodetector import ViewMigrationAutoDetector
-        from django_db_views.tests.models import Balance
-        loader = MigrationLoader(None, ignore_no_migrations=True)
-        from_state = loader.project_state()
-        to_state = ProjectState.from_apps(apps)
-        auto_detector = ViewMigrationAutoDetector(from_state=from_state, to_state=to_state)
-        Balance.view_definition = {}
-        auto_detector.get_view_definition_from_model(Balance)
+    def tearDown(self):
+        for db in self.databases:
+            recorder = MigrationRecorder(connections[db])
+            recorder.migration_qs.filter(app='migrations').delete()
+
+    available_apps = ['migrations']
+
+    def assertTableNotExists(self, table, using='default'):
+        with connections[using].cursor() as cursor:
+            self.assertNotIn(table, connections[using].introspection.table_names(cursor))
+
+    def assertViewExists(self, view, using='default'):
+        with connections[using].cursor() as cursor:
+            tables = [
+                table.name for table in connections[using].introspection.get_table_list(cursor) if table.type == 'v'
+            ]
+            self.assertIn(view, tables)
+
+    def assertViewNotExists(self, view, using='default'):
+        with connections[using].cursor() as cursor:
+            tables = [
+                table.name for table in connections[using].introspection.get_table_list(cursor) if table.type == 'v'
+            ]
+            self.assertNotIn(view, tables)
+
+    @override_settings(MIGRATION_MODULES={'migrations': 'migrations.test_basic_view_creation'})
+    def test_migrate_successfully_creates_view(self):
+        call_command('migrate')
+        self.assertViewExists('question_stat')
+
+    @override_settings(MIGRATION_MODULES={'migrations': 'migrations.test_basic_view_creation'})
+    def test_roll_back_successfully_removes_view(self):
+        call_command('migrate')
+        call_command('migrate', 'migrations', 'zero')
+        self.assertViewNotExists('question_stat')
 
 
 
