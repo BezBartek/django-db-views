@@ -3,6 +3,7 @@ from itertools import zip_longest
 
 import six
 from django.apps import apps
+from django.conf import settings
 from django.db import connection, ProgrammingError
 from django.db.migrations.autodetector import MigrationAutodetector
 from django.db.migrations.graph import MigrationGraph
@@ -96,41 +97,48 @@ class ViewMigrationAutoDetector(MigrationAutodetector):
 
     def generate_views_operations(self, graph: MigrationGraph)->None:   # it's correct? or Type[None]
         view_models = self.get_view_models()
-
         for (app_label, model_name), view_model in view_models.items():
-
-            current_view_definition = self.get_previous_view_definition_state(
-                graph, app_label, view_model._meta.db_table
-            )
             new_view_definition = self.get_view_definition_from_model(view_model)
-            if not self.is_same_views(current_view_definition, new_view_definition):
-                # Depend on all bases
-                model_state = self.to_state.models[app_label, model_name]
-                dependencies = []
-                for base in model_state.bases:
-                    if isinstance(base, six.string_types) and "." in base:
-                        base_app_label, base_name = base.split(".", 1)
-                        dependencies.append((base_app_label, base_name, None, True))
-                self.add_operation(
-                    app_label,
-                    ViewRunPython(
-                        ForwardViewMigration(new_view_definition.strip(";"), view_model._meta.db_table),
-                        BackwardViewMigration(current_view_definition.strip(";"), view_model._meta.db_table),
-                        atomic=False
-                    ),
-                    dependencies=dependencies,
+            for engine, latest_view_definition in new_view_definition.items():
+                current_view_definition = self.get_previous_view_definition_state(
+                    graph, app_label, view_model._meta.db_table, engine
                 )
+                if not self.is_same_views(current_view_definition, latest_view_definition):
+                    # Depend on all bases
+                    model_state = self.to_state.models[app_label, model_name]
+                    dependencies = []
+                    for base in model_state.bases:
+                        if isinstance(base, six.string_types) and "." in base:
+                            base_app_label, base_name = base.split(".", 1)
+                            dependencies.append((base_app_label, base_name, None, True))
+                    self.add_operation(
+                        app_label,
+                        ViewRunPython(
+                            ForwardViewMigration(latest_view_definition.strip(";"),
+                                                 view_model._meta.db_table, engine=engine),
+                            BackwardViewMigration(current_view_definition.strip(";"),
+                                                  view_model._meta.db_table, engine=engine),
+                            atomic=False
+                        ),
+                        dependencies=dependencies,
+                    )
 
-    def get_view_definition_from_model(self, view_model: DBView) -> str:
-        if callable(view_model.view_definition):
-            view_definition = view_model.view_definition()
+    def get_view_definition_from_model(self, view_model: DBView) -> dict:
+        view_definition = {}
+
+        if isinstance(view_model.view_definition, dict):
+            for engine, definition in view_model.view_definition.items():
+                view_definition[engine] = self.get_cleaned_view_definition_value(definition)
+                assert isinstance(view_definition[engine], str), \
+                    "View definition must be callable and return string or be itself a string."
         else:
-            view_definition = view_model.view_definition
-        assert isinstance(view_definition, str),\
-            "View definition must be callable and return string or be itself a string."
-        return view_definition.strip()
+            engine = settings.DATABASES['default']['ENGINE']
+            view_definition[engine] = self.get_cleaned_view_definition_value(view_model.view_definition)
+            assert isinstance(view_definition[engine], str), \
+                "View definition must be callable and return string or be itself a string."
+        return view_definition
 
-    def get_previous_view_definition_state(self, graph: MigrationGraph, app_label: str, for_table_name: str):
+    def get_previous_view_definition_state(self, graph: MigrationGraph, app_label: str, for_table_name: str, engine: str):
         nodes = graph.leaf_nodes(app_label)
         last_node = nodes[0] if nodes else None
 
@@ -141,7 +149,10 @@ class ViewMigrationAutoDetector(MigrationAutodetector):
                     if isinstance(operation, ViewRunPython):
                         table_name = operation.code.table_name
                         previous_view_definition = operation.code.view_definition
-                        if table_name == for_table_name:
+                        previous_view_engine = operation.code.view_engine \
+                            if hasattr(operation.code, 'view_engine') and operation.code.view_engine \
+                            else settings.DATABASES['default']['ENGINE']
+                        if table_name == for_table_name and previous_view_engine == engine:
                             return previous_view_definition.strip()
             # right now i get only migrations from the same app.
             app_parents = list(sorted(filter(lambda x: x[0] == app_label, graph.node_map[last_node].parents)))
@@ -150,6 +161,12 @@ class ViewMigrationAutoDetector(MigrationAutodetector):
             else:   # if no parents mean we found initial migration
                 last_node = None
         return ""
+
+    def get_cleaned_view_definition_value(self, view_definition):
+        if callable(view_definition):
+            return view_definition().strip()
+        else:
+            return view_definition.strip()
 
     def get_current_view_definition_from_database(self, table_name: str)->str:
         """working only with postgres"""

@@ -50,6 +50,37 @@ Callable view definition example:
 
 using callable allow you to write view definition using ORM. 
 
+As of version 0.1.0 you can also define view_definition as
+a dict for multiple engine types. This becomes useful if you 
+use a different engine for local / dev / staging / production.
+If you do not pass in an engine and have a str or callable the
+engine will be defaulted to the default database defined in django.settings
+Example as a dict:
+
+     view_definition = {
+          view_definition = {
+        "django.db.backends.sqlite3": """
+              SELECT
+                  row_number() over () as id,
+                  q.id as question_id,
+                  count(*) as total_choices
+              FROM question q
+                JOIN choice c on c.question_id = q.id
+              GROUP BY q.id
+            """,
+        "django.db.backends.postgresql": """
+            SELECT
+                row_number() over () as id,
+                q.id as question_id,
+                count(*) as total_choices
+            FROM question q
+              JOIN choice c on c.question_id = q.id
+            GROUP BY q.id
+        """,
+    }
+     }
+
+
 ### How view migrations work? 
    - DBView working as regular django model. You can use it in any query. 
    - It's using Django code, view-migrations looks like regular migrations. 
@@ -58,5 +89,6 @@ using callable allow you to write view definition using ORM.
       - if there is no such migration then script create a new migration
       - if previous migration exists but no change in `view_definition` is detected nothing is done
       - if previous migration exists, then script will use previous `view_definition` for backward operation, and creates new migration.
+      - when run it will check if the current default engine definined in django.settings is the same engine the view was defined with
 
 Tested with live projects based on Django: 1.11.5, 2.2.10
