@@ -95,7 +95,7 @@ class ViewMigrationAutoDetector(MigrationAutodetector):
                 return False
         return True
 
-    def generate_views_operations(self, graph: MigrationGraph)->None:   # it's correct? or Type[None]
+    def generate_views_operations(self, graph: MigrationGraph) -> None:
         view_models = self.get_view_models()
         for (app_label, model_name), view_model in view_models.items():
             new_view_definition = self.get_view_definition_from_model(view_model)

@@ -46,13 +46,13 @@ class MigrationTests(TransactionTestCase):
     def test_migrate_successfully_creates_view(self):
         call_command('migrate')
         self.assertViewExists('question_stat')
+        self.assertViewExists('view_for_backward_compatibility_check')
 
     @override_settings(MIGRATION_MODULES={'migrations': 'migrations.test_basic_view_creation'})
     def test_roll_back_successfully_removes_view(self):
         call_command('migrate')
         call_command('migrate', 'migrations', 'zero')
         self.assertViewNotExists('question_stat')
-
-
+        self.assertViewNotExists('view_for_backward_compatibility_check')
 
 
