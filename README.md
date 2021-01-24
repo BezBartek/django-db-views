@@ -48,8 +48,20 @@ Callable view definition example:
 
 
 
-using callable allow you to write view definition using ORM. 
+using callable allow you to write view definition using ORM.
 
+
+### How view migrations work? 
+   - DBView working as regular django model. You can use it in any query. 
+   - It's using Django code, view-migrations looks like regular migrations. 
+   - It relies on `db_table` names. 
+   - `makeviewmigrations` command finds previous migration for view.
+      - if there is no such migration then script create a new migration
+      - if previous migration exists but no change in `view_definition` is detected nothing is done
+      - if previous migration exists, then script will use previous `view_definition` for backward operation, and creates new migration.
+      - when run it will check if the current default engine definined in django.settings is the same engine the view was defined with
+
+     
 As of version 0.1.0 you can also define view_definition as
 a dict for multiple engine types. This becomes useful if you 
 use a different engine for local / dev / staging / production.
@@ -81,14 +93,8 @@ Example as a dict:
      }
 
 
-### How view migrations work? 
-   - DBView working as regular django model. You can use it in any query. 
-   - It's using Django code, view-migrations looks like regular migrations. 
-   - It relies on `db_table` names. 
-   - `makeviewmigrations` command finds previous migration for view.
-      - if there is no such migration then script create a new migration
-      - if previous migration exists but no change in `view_definition` is detected nothing is done
-      - if previous migration exists, then script will use previous `view_definition` for backward operation, and creates new migration.
-      - when run it will check if the current default engine definined in django.settings is the same engine the view was defined with
 
 Tested with live projects based on Django: 1.11.5, 2.2.10
+
+Please use the newest version. version 0.1.0 has backward
+incompatibility which is solved in version 0.1.1 and higher.
