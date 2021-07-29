@@ -13,7 +13,7 @@
 - To create your view use DBView class, remember to set view definition attribute.
 
 
-
+   ```
     from django_db_views.db_view import DBView
     
     class Balance(DBView):
@@ -36,20 +36,18 @@
         class Meta:
             managed = False
             db_table = 'virtual_card_balance'
-
+   ```
 
 
 - The view definition must be a string or a callable. 
-Callable view definition example:
 
+   Callable view definition example:
+   
+        view_definition = lambda: str(SomeModel.objects.all().query)
 
+   using callable allow you to write view definition using ORM.
 
-    view_definition = lambda: str(SomeModel.objects.all().query)
-
-
-
-using callable allow you to write view definition using ORM.
-
+- Ensure that you include `managed = False` in the DBView model's Meta class to prevent Django creating it's own migration. 
 
 ### How view migrations work? 
    - DBView working as regular django model. You can use it in any query. 
@@ -69,29 +67,28 @@ If you do not pass in an engine and have a str or callable the
 engine will be defaulted to the default database defined in django.settings
 Example as a dict:
 
-     view_definition = {
-          view_definition = {
-        "django.db.backends.sqlite3": """
-              SELECT
-                  row_number() over () as id,
-                  q.id as question_id,
-                  count(*) as total_choices
-              FROM question q
-                JOIN choice c on c.question_id = q.id
-              GROUP BY q.id
-            """,
-        "django.db.backends.postgresql": """
-            SELECT
-                row_number() over () as id,
-                q.id as question_id,
-                count(*) as total_choices
-            FROM question q
-              JOIN choice c on c.question_id = q.id
-            GROUP BY q.id
-        """,
-    }
-     }
-
+```
+view_definition = {
+    "django.db.backends.sqlite3": """
+        SELECT
+            row_number() over () as id,
+            q.id as question_id,
+            count(*) as total_choices
+        FROM question q
+        JOIN choice c on c.question_id = q.id
+        GROUP BY q.id
+    """,
+    "django.db.backends.postgresql": """
+        SELECT
+            row_number() over () as id,
+            q.id as question_id,
+            count(*) as total_choices
+        FROM question q
+        JOIN choice c on c.question_id = q.id
+        GROUP BY q.id
+    """,
+}
+```
 
 
 Tested with live projects based on Django: 1.11.5, 2.2.10
