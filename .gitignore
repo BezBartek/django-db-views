@@ -6,3 +6,6 @@ build/
 *.egg-info/
 dist/
 test-db
+
+#
+.env

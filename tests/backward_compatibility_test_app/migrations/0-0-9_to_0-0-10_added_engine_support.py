@@ -13,19 +13,19 @@ class Migration(migrations.Migration):
         # Versions from <initial_state, 0.0.9> does not define engine parameter.
         django_db_views.operations.ViewRunPython(
             code=django_db_views.migration_functions.ForwardViewMigration(
-                'SELECT\n                  row_number() over () as id,\n                  q.id as question_id,\n                  count(*) as total_choices\n              FROM question q\n                JOIN choice c on c.question_id = q.id\n              GROUP BY q.id',
+                "Select\n                  *\n              FROM (values (1, 'dummy_1') ,(2, 'dummy_2')) A(id, name)",
                 'view_for_backward_compatibility_check'),
             reverse_code=django_db_views.migration_functions.BackwardViewMigration('',
                                                                                    'view_for_backward_compatibility_check'),
             atomic=False,
         ),
-        # Versions from 0.0.1 and higher define engine parameter.
+        # Versions from 0.0.10 and higher define engine parameter.
         django_db_views.operations.ViewRunPython(
             code=django_db_views.migration_functions.ForwardViewMigration(
-                'SELECT\n                  row_number() over () as id,\n                  q.id as question_id,\n                  count(*) as total_choices\n              FROM question q\n                JOIN choice c on c.question_id = q.id\n              GROUP BY q.id',
-                'question_stat', engine='django.db.backends.sqlite3'),
+                "Select\n                  *\n              FROM (values (1, 'dummy_1') ,(2, 'dummy_2')) A(id, name)",
+                'view_for_backward_compatibility_check', engine='django.db.backends.sqlite3'),
             reverse_code=django_db_views.migration_functions.BackwardViewMigration('',
-                                                                                   'question_stat',
+                                                                                   'view_for_backward_compatibility_check',
                                                                                    engine='django.db.backends.sqlite3'),
             atomic=False,
         ),

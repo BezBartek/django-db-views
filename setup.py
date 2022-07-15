@@ -12,8 +12,8 @@ setup(
     name="django-db-views",
     version="0.1.1",
     description="Handle database views. "
-                "Allow to create migrations for database views. "
-                "View migrations using django code. "
+                "Allow to create backward_compatibility_test_app for database views. "
+                "View backward_compatibility_test_app using django code. "
                 "They can be reversed. "
                 "Changes in model view definition are detected automatically. "
                 "Support almost all options as regular makemigrations command",

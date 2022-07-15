@@ -13,13 +13,20 @@
 - To create your view use DBView class, remember to set view definition attribute.
 
 
-   ```
+   ```python
+    from django.db import models
     from django_db_views.db_view import DBView
+    
+    
+    class VirtualCard(models.Model):
+        ...
+    
     
     class Balance(DBView):
 
         virtual_card = models.ForeignKey(
-            VirtualCard, on_delete=models.DO_NOTHING, related_name='virtual_cards'
+            VirtualCard,  # VirtualCard is a regular Django model. 
+            on_delete=models.DO_NOTHING, related_name='virtual_cards'
         )
         total_discount = models.DecimalField(max_digits=12, decimal_places=2)
         total_returns = models.DecimalField(max_digits=12, decimal_places=2)
@@ -67,7 +74,7 @@ If you do not pass in an engine and have a str or callable the
 engine will be defaulted to the default database defined in django.settings
 Example as a dict:
 
-```
+```python
 view_definition = {
     "django.db.backends.sqlite3": """
         SELECT

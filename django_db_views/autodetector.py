@@ -30,7 +30,7 @@ class ViewMigrationAutoDetector(MigrationAutodetector):
 
         # Prepare some old/new state and model lists, separating
         # proxy models and ignoring unmigrated apps.
-        self.old_apps = self.from_state.concrete_apps
+        self.old_apps = self.from_state.concrete_apps  # Change in django 4.0 +
         self.new_apps = self.to_state.apps
         self.old_model_keys = []
         self.old_proxy_keys = []
@@ -168,7 +168,7 @@ class ViewMigrationAutoDetector(MigrationAutodetector):
         else:
             return view_definition.strip()
 
-    def get_current_view_definition_from_database(self, table_name: str)->str:
+    def get_current_view_definition_from_database(self, table_name: str) -> str:
         """working only with postgres"""
         with connection.cursor() as cursor:
             try:

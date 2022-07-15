@@ -1,0 +1,24 @@
+# Docker compose test services
+version: "3"
+
+services:
+  postgres:
+    image: postgres
+    container_name: django-db-views-postgres
+    environment:
+      POSTGRES_DB: "${POSTGRES_DB}"
+      POSTGRES_USER: "${POSTGRES_USER}"
+      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD}"
+    ports:
+      - "${POSTGRES_PORT}:5432"
+
+  mysql:
+    image: mysql:5.7
+    container_name: django-db-views-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: "${MYSQL_PASSWORD}"
+      MYSQL_DATABASE: "${MYSQL_DATABASE}"
+      MYSQL_USER: "${MYSQL_USER}"
+      MYSQL_PASSWORD: "${MYSQL_PASSWORD}"
+    ports:
+      - "${MYSQL_PORT}:3306"

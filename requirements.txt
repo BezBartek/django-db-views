@@ -1,0 +1,7 @@
+six
+django>=2.*
+psycopg2==2.9.3
+pytest-django==4.5.2
+django-environ==0.9.0
+mysqlclient==2.0.3
+pytest-mock==3.8.2
