@@ -85,7 +85,7 @@ class QueryViewQuestionStatTemplate:
         db_table = "question_stat"
 
 
-class MultipleDBViewQuestionStatTemplate:
+class MultipleDBRawViewQuestionStatTemplate:
     identifier = models.IntegerField(primary_key=True)
     name = models.TextField()
 
@@ -102,6 +102,29 @@ class MultipleDBViewQuestionStatTemplate:
                        ) A(id, name)
         """,
     }
+
+    class Meta:
+        managed = False
+        db_table = "question_stat"
+
+
+class MultipleDBQueryViewQuestionStatTemplate:
+    identifier = models.IntegerField(primary_key=True)
+    name = models.TextField()
+
+    @staticmethod
+    def view_definition():
+        queryset = apps.get_model(
+                    'test_app', 'Question'
+                ).objects.values("id").annotate(total_choices=models.Count("choices"), question_id=F("id"))
+        return {
+            "django.db.backends.mysql": str(
+                queryset.query.get_compiler("mysql").as_sql()[0]
+            ),
+            "django.db.backends.postgresql": str(
+                queryset.query
+            )
+        }
 
     class Meta:
         managed = False

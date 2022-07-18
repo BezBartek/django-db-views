@@ -2,7 +2,8 @@ import pytest
 from django.db import models
 
 from tests.test_app.models import define_model, QuestionTemplate, SimpleViewWithoutDependenciesTemplate, ChoiceTemplate, \
-    RawViewQuestionStatTemplate, QueryViewQuestionStatTemplate, MultipleDBViewQuestionStatTemplate
+    RawViewQuestionStatTemplate, QueryViewQuestionStatTemplate, MultipleDBRawViewQuestionStatTemplate, \
+    MultipleDBQueryViewQuestionStatTemplate
 
 
 @pytest.fixture
@@ -34,6 +35,12 @@ def QueryViewQuestionStat():
 
 
 @pytest.fixture
-def MultipleDBViewQuestionStat():
+def MultipleDBRawViewQuestionStat():
     from django_db_views.db_view import DBView
-    return define_model(MultipleDBViewQuestionStatTemplate, DBView)
+    return define_model(MultipleDBRawViewQuestionStatTemplate, DBView)
+
+
+@pytest.fixture
+def MultipleDBQueryViewQuestionStat():
+    from django_db_views.db_view import DBView
+    return define_model(MultipleDBQueryViewQuestionStatTemplate, DBView)

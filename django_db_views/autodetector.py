@@ -1,6 +1,7 @@
 import re
 from itertools import zip_longest
 
+import django
 import six
 from django.apps import apps
 from django.conf import settings
@@ -21,10 +22,26 @@ class ViewMigrationAutoDetector(MigrationAutodetector):
         rest methods are fully our code which we use for detection.
         It's detect only view model changes.
     """
-    def _detect_changes(self, convert_apps=None, graph=None)->dict:
+    def _detect_changes(self, convert_apps=None, graph=None) -> dict:
+
+        # <START copy paste from MigrationAutodetector, depends on django version>
+        if django.VERSION >= (4,):
+            self._detect_changes_preparation_django_version_four_and_above(convert_apps)
+        else:
+            self._detect_changes_preparation_django_below_version_four(convert_apps)
+        # <END of copy paste from MigrationAutodetector>
+
+        self.generate_views_operations(graph)
 
         # <START copy paste from MigrationAutodetector>
+        self._sort_migrations()
+        self._build_migration_list(graph)
+        self._optimize_migrations()
 
+        return self.migrations
+        # <END end of copy paste from MigrationAutodetector>
+
+    def _detect_changes_preparation_django_below_version_four(self, convert_apps):
         self.generated_operations = {}
         self.altered_indexes = {}
 
@@ -62,17 +79,42 @@ class ViewMigrationAutoDetector(MigrationAutodetector):
                 else:
                     self.new_model_keys.append((al, mn))
 
-        # <END of copy paste from MigrationAutodetector>
+    def _detect_changes_preparation_django_version_four_and_above(self, convert_apps):
+        self.generated_operations = {}
+        self.altered_indexes = {}
+        self.altered_constraints = {}
 
-        self.generate_views_operations(graph)
+        # Prepare some old/new state and model lists, separating
+        # proxy models and ignoring unmigrated apps.
+        self.old_model_keys = set()
+        self.old_proxy_keys = set()
+        self.old_unmanaged_keys = set()
+        self.new_model_keys = set()
+        self.new_proxy_keys = set()
+        self.new_unmanaged_keys = set()
+        for (app_label, model_name), model_state in self.from_state.models.items():
+            if not model_state.options.get('managed', True):
+                self.old_unmanaged_keys.add((app_label, model_name))
+            elif app_label not in self.from_state.real_apps:
+                if model_state.options.get('proxy'):
+                    self.old_proxy_keys.add((app_label, model_name))
+                else:
+                    self.old_model_keys.add((app_label, model_name))
 
-        # <START copy paste from MigrationAutodetector>
-        self._sort_migrations()
-        self._build_migration_list(graph)
-        self._optimize_migrations()
+        for (app_label, model_name), model_state in self.to_state.models.items():
+            if not model_state.options.get('managed', True):
+                self.new_unmanaged_keys.add((app_label, model_name))
+            elif (
+                app_label not in self.from_state.real_apps or
+                (convert_apps and app_label in convert_apps)
+            ):
+                if model_state.options.get('proxy'):
+                    self.new_proxy_keys.add((app_label, model_name))
+                else:
+                    self.new_model_keys.add((app_label, model_name))
 
-        return self.migrations
-        # <END end of copy paste from MigrationAutodetector>
+        self.from_state.resolve_fields_and_relations()
+        self.to_state.resolve_fields_and_relations()
 
     def get_view_models(self)->dict:
         view_models = {}
@@ -124,19 +166,19 @@ class ViewMigrationAutoDetector(MigrationAutodetector):
                     )
 
     def get_view_definition_from_model(self, view_model: DBView) -> dict:
-        view_definition = {}
+        view_definitions = {}
+        if callable(view_model.view_definition):
+            raw_view_definition = view_model.view_definition()
+        else:
+            raw_view_definition = view_model.view_definition
 
-        if isinstance(view_model.view_definition, dict):
-            for engine, definition in view_model.view_definition.items():
-                view_definition[engine] = self.get_cleaned_view_definition_value(definition)
-                assert isinstance(view_definition[engine], str), \
-                    "View definition must be callable and return string or be itself a string."
+        if isinstance(raw_view_definition, dict):
+            for engine, definition in raw_view_definition.items():
+                view_definitions[engine] = self.get_cleaned_view_definition_value(definition)
         else:
             engine = settings.DATABASES['default']['ENGINE']
-            view_definition[engine] = self.get_cleaned_view_definition_value(view_model.view_definition)
-            assert isinstance(view_definition[engine], str), \
-                "View definition must be callable and return string or be itself a string."
-        return view_definition
+            view_definitions[engine] = self.get_cleaned_view_definition_value(raw_view_definition)
+        return view_definitions
 
     def get_previous_view_definition_state(self, graph: MigrationGraph, app_label: str, for_table_name: str, engine: str):
         nodes = graph.leaf_nodes(app_label)
@@ -162,11 +204,10 @@ class ViewMigrationAutoDetector(MigrationAutodetector):
                 last_node = None
         return ""
 
-    def get_cleaned_view_definition_value(self, view_definition):
-        if callable(view_definition):
-            return view_definition().strip()
-        else:
-            return view_definition.strip()
+    def get_cleaned_view_definition_value(self, view_definition: str) -> str:
+        assert isinstance(view_definition, str), \
+            "View definition must be callable and return string or be itself a string."
+        return view_definition.strip()
 
     def get_current_view_definition_from_database(self, table_name: str) -> str:
         """working only with postgres"""

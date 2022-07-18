@@ -5,7 +5,10 @@ __pycache__/
 build/
 *.egg-info/
 dist/
-test-db
+
+# Ignore temporary tox and pytest environments
+.tox/
+.pytest_cache/
 
 #
 .env
