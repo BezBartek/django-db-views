@@ -47,7 +47,7 @@ class ViewMigrationAutoDetector(MigrationAutodetector):
 
         # Prepare some old/new state and model lists, separating
         # proxy models and ignoring unmigrated apps.
-        self.old_apps = self.from_state.concrete_apps  # Change in django 4.0 +
+        self.old_apps = self.from_state.concrete_apps
         self.new_apps = self.to_state.apps
         self.old_model_keys = []
         self.old_proxy_keys = []
