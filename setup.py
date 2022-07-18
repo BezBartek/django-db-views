@@ -10,7 +10,7 @@ README = (HERE / "README.md").read_text()
 # This call to setup() does all the work
 setup(
     name="django-db-views",
-    version="0.1.1",
+    version="0.1.2",
     description="Handle database views. "
                 "Allow to create backward_compatibility_test_app for database views. "
                 "View backward_compatibility_test_app using django code. "

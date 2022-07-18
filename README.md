@@ -1,4 +1,11 @@
 # django-db-views
+|  |  |                                                                                                    |
+|--------------------|---------------------|----------------------------------------------------------------------------------------------------|
+| :memo: | **License** | [![License](https://img.shields.io/:license-mit-blue.svg)](http://doge.mit-license.org)            |
+| :package: | **PyPi** | [![PyPi](https://badge.fury.io/py/django-db-views.svg)](https://pypi.org/project/django-db-views/) |
+| <img src="https://cdn.iconscout.com/icon/free/png-256/django-1-282754.png" width="22px" height="22px" align="center" /> | **Django Versions** | 2.2 to 4.0                                                                                         |
+| <img src="http://www.iconarchive.com/download/i73027/cornmanthe3rd/plex/Other-python.ico" width="22px" height="22px" align="center" /> | **Python Versions** | 3.6 to 3.10                                                                                        |
+
 
 ### How to install?
   - `pip install django-db-views`
@@ -41,16 +48,28 @@
         """
     
         class Meta:
-            managed = False
+            managed = False  # Managed must be set to False!
             db_table = 'virtual_card_balance'
    ```
 
 
-- The view definition must be a string or a callable. 
+- The view definition can be: **str/dict** or a callable which returns **str/dict**. 
 
-   Callable view definition example:
-   
+   Callable view definition examples:
+
+   ```python
+    from django_db_views.db_view import DBViewl
+  
+    class ExampleView(DBView):
+        @staticmethod
+        def view_definition():
+            return str(SomeModel.objects.all().query)
+        # OR
         view_definition = lambda: str(SomeModel.objects.all().query)
+        class Meta:
+            managed = False 
+            db_table = 'example_view'
+   ```
 
    using callable allow you to write view definition using ORM.
 
@@ -66,13 +85,21 @@
       - if previous migration exists, then script will use previous `view_definition` for backward operation, and creates new migration.
       - when run it will check if the current default engine definined in django.settings is the same engine the view was defined with
 
-     
-As of version 0.1.0 you can also define view_definition as
-a dict for multiple engine types. This becomes useful if you 
-use a different engine for local / dev / staging / production.
+
+### Multidatabase support
+Yoy can define view_definition as
+a dict for multiple engine types.
+
 If you do not pass in an engine and have a str or callable the
-engine will be defaulted to the default database defined in django.settings
-Example as a dict:
+engine will be defaulted to the default database defined in django.
+
+It respects --database flag in the migrate command,
+So you are able to define a specific view definitions for specific databases using the engine key.
+If the key do not match your current database, view migration will be skipped.
+
+Also, feature becomes useful if you use a different engine for local / dev / staging / production.
+
+Example dict view definition:
 
 ```python
 view_definition = {
@@ -98,7 +125,5 @@ view_definition = {
 ```
 
 
-Tested with live projects based on Django: 1.11.5, 2.2.10
-
-Please use the newest version. version 0.1.0 has backward
-incompatibility which is solved in version 0.1.1 and higher.
+_Please use the newest version. version 0.1.0 has backward
+incompatibility which is solved in version 0.1.1 and higher._
