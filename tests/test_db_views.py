@@ -7,7 +7,7 @@ from django.core.management import call_command
 from tests.asserts import is_view_exists
 
 
-@pytest.fixture(autouse=True)
+@pytest.fixture(autouse=True, scope='function')
 def temp_migrations_dir(settings, tmpdir, mocker):
     migrations_dir = tmpdir.mkdir("migrations")
     init_file = (migrations_dir / "__init__.py")
@@ -28,7 +28,12 @@ def temp_migrations_dir(settings, tmpdir, mocker):
         "django.db.migrations.loader.import_module",
         new_module_import
     )
-    yield migrations_dir
+    return migrations_dir
+
+
+@pytest.fixture(autouse=True, scope='function')
+def dynamic_models_cleanup():
+    yield None
     # We delete all dynamically created models
     test_app_models = list(apps.all_models['test_app'].keys())
     for model_name in test_app_models:
@@ -47,6 +52,8 @@ def test_make_view_migration_for_db_view_based_on_raw_sql_without_dependencies(
     call_command("migrate", "test_app")
     assert is_view_exists(SimpleViewWithoutDependencies._meta.db_table)
     assert SimpleViewWithoutDependencies.objects.all().count() == 2
+    call_command("migrate", "test_app", "zero")
+    assert not is_view_exists(SimpleViewWithoutDependencies._meta.db_table)
 
 
 @pytest.mark.django_db()
@@ -57,7 +64,7 @@ def test_make_view_migration_for_db_view_based_on_raw_sql_with_dependencies_on_o
     assert not is_view_exists(RawViewQuestionStat._meta.db_table)
     call_command("makemigrations", "test_app")  # make migrations for regular tables
     call_command("makeviewmigrations", "test_app", name="view_migration")  # make migrations for db view
-    assert len(temp_migrations_dir.listdir()) == 3
+    assert len(temp_migrations_dir.listdir()) == 3, temp_migrations_dir.listdir()
     assert (temp_migrations_dir / "0001_initial.py").exists()
     assert (temp_migrations_dir / "0002_view_migration.py").exists()
     assert "('test_app', '0001_initial')" in (temp_migrations_dir / "0002_view_migration.py").read()
@@ -103,13 +110,62 @@ def test_make_view_migration_for_db_view_based_on_queryset_with_dependencies_on_
 
 @pytest.mark.django_db(databases=['postgres', 'sqlite'], transaction=True)
 @pytest.mark.parametrize("database", ['postgres', 'sqlite'])
-def test_make_view_migration_for_db_view_with_multiple_databases_support(
-        temp_migrations_dir, database, MultipleDBViewQuestionStat
+def test_make_view_migration_for_db_raw_view_with_multiple_databases_support(
+        temp_migrations_dir, database, MultipleDBRawViewQuestionStat
 ):
     assert not (temp_migrations_dir / "0001_initial.py").exists()
-    assert not is_view_exists(MultipleDBViewQuestionStat._meta.db_table, using=database)
+    assert not is_view_exists(MultipleDBRawViewQuestionStat._meta.db_table, using=database)
     call_command("makeviewmigrations", "test_app")
     assert (temp_migrations_dir / "0001_initial.py").exists()
     call_command("migrate", "test_app", database=database)
-    assert is_view_exists(MultipleDBViewQuestionStat._meta.db_table, using=database)
-    assert MultipleDBViewQuestionStat.objects.using(database).all().count() == 2
+    assert is_view_exists(MultipleDBRawViewQuestionStat._meta.db_table, using=database)
+    assert MultipleDBRawViewQuestionStat.objects.using(database).all().count() == 2
+    call_command("migrate", "test_app", "zero", database=database) # after transactions tests we have to clean up.
+
+
+@pytest.mark.django_db(databases=['default', 'postgres', 'mysql'], transaction=True)
+@pytest.mark.parametrize("database", ['postgres', 'mysql'])
+def test_make_view_migration_for_db_queryset_view_with_multiple_databases_support(
+        temp_migrations_dir, database, Question, Choice, MultipleDBQueryViewQuestionStat
+):
+    assert not (temp_migrations_dir / "0001_initial.py").exists()
+    assert not is_view_exists(MultipleDBQueryViewQuestionStat._meta.db_table, using=database)
+    call_command("makemigrations", "test_app")
+    call_command("makeviewmigrations", "test_app")
+    assert (temp_migrations_dir / "0001_initial.py").exists()
+    call_command("migrate", "test_app", database=database)
+    assert is_view_exists(MultipleDBQueryViewQuestionStat._meta.db_table, using=database)
+    assert MultipleDBQueryViewQuestionStat.objects.using(database).all().count() == 0
+    call_command("migrate", "test_app", "zero", database=database)
+    assert not is_view_exists(MultipleDBQueryViewQuestionStat._meta.db_table, using=database)
+    call_command("migrate", "test_app", "zero", database=database) # after transactions tests we have to clean up.
+
+
+@pytest.mark.django_db()
+def test_move_up_and_down_through_simple_view_stages(
+        temp_migrations_dir, SimpleViewWithoutDependencies
+):
+    call_command("makeviewmigrations", "test_app")
+    assert (temp_migrations_dir / "0001_initial.py").exists()
+    # made changes
+    apps.all_models['test_app']["simpleviewwithoutdependencies"].view_definition = """
+              Select *
+                 From  (values (3, 'dummy_3')) A(id, name)
+            """
+    call_command("makeviewmigrations", "test_app", name="second_view_migration")
+    assert (temp_migrations_dir / "0002_second_view_migration.py").exists()
+    # no changes
+    call_command("makeviewmigrations", "test_app", name="third_view_migration")
+    assert not (temp_migrations_dir / "0003_third_view_migration.py").exists()
+    assert len(temp_migrations_dir.listdir()) == 3
+    # we are on stage 2
+    call_command("migrate", "test_app")
+    assert is_view_exists(SimpleViewWithoutDependencies._meta.db_table)
+    assert SimpleViewWithoutDependencies.objects.all().count() == 1
+    # go back to stage 1
+    call_command("migrate", "test_app", "0001")
+    assert is_view_exists(SimpleViewWithoutDependencies._meta.db_table)
+    assert SimpleViewWithoutDependencies.objects.all().count() == 2
+    # move to stag 1
+    call_command("migrate", "test_app", "zero")
+    assert not is_view_exists(SimpleViewWithoutDependencies._meta.db_table)

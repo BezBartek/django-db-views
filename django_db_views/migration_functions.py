@@ -22,7 +22,7 @@ class ForwardViewMigration(ViewMigration):
 @deconstructible
 class BackwardViewMigration(ViewMigration):
     def __call__(self, apps, schema_editor):
-        if self.view_engine == schema_editor.connection.settings_dict['ENGINE']:
+        if self.view_engine is None or self.view_engine == schema_editor.connection.settings_dict['ENGINE']:
             schema_editor.execute("DROP VIEW IF EXISTS %s;" % self.table_name)
         if self.view_definition:
             if self.view_engine is None or self.view_engine == schema_editor.connection.settings_dict['ENGINE']:
