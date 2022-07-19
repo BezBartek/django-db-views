@@ -1,7 +1,7 @@
 import pytest
 from django.core.management import call_command
 
-from tests.asserts import is_view_exists
+from tests.asserts_utils import is_view_exists
 
 
 @pytest.fixture(autouse=True)

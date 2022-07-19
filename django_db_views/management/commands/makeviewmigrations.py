@@ -2,7 +2,7 @@ import sys
 
 from django.apps import apps
 from django.db.migrations.loader import MigrationLoader
-from django.db.migrations.questioner import MigrationQuestioner, InteractiveMigrationQuestioner
+from django.db.migrations.questioner import InteractiveMigrationQuestioner
 from django.db.migrations.state import ProjectState
 from django.core.management.commands.makemigrations import Command as MakemigrationsCommand
 

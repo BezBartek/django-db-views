@@ -1,6 +1,6 @@
 from django.apps import apps
 from django.db import models
-from django.db.models import F
+from django.db.models import F, Index
 from django.utils import timezone
 
 
@@ -129,3 +129,34 @@ class MultipleDBQueryViewQuestionStatTemplate:
     class Meta:
         managed = False
         db_table = "question_stat"
+
+
+# Materialized View
+class SimpleMaterializedViewWithoutDependenciesTemplate:
+    current_date_time = models.DateTimeField(primary_key=True)
+
+    view_definition = """
+              Select *
+                 From  (values (NOW())) A(current_date_time)
+            """
+
+    class Meta:
+        managed = False
+        db_table = "simple_materialized_view_without_dependencies"
+
+
+class SimpleMaterializedViewWithIndexTemplate:
+    current_date_time = models.DateTimeField(primary_key=True)
+
+    view_definition = """
+              Select *
+                 From  (values (NOW())) A(current_date_time)
+            """
+
+    class Meta:
+        managed = False
+        db_table = "simple_materialized_view_without_dependencies"
+        # only django 3.2 +
+        indexes = [
+            Index(fields=['current_date_time'])
+        ]
