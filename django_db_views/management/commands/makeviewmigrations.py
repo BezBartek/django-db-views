@@ -19,11 +19,11 @@ class Command(MakemigrationsCommand):
         """
         parser.add_argument(
             'args', metavar='app_label', nargs='*',
-            help='Specify the app label(s) to create backward_compatibility_test_app for.',
+            help='Specify the app label(s) to create migrations for.',
         )   # Working
         parser.add_argument(
             '--dry-run', action='store_true', dest='dry_run', default=False,
-            help="Just show what backward_compatibility_test_app would be made; don't actually write them.",
+            help="Just show what migrations would be made; don't actually write them.",
         )   # Working
         parser.add_argument(
             '--merge', action='store_true', dest='merge', default=False,
@@ -39,7 +39,7 @@ class Command(MakemigrationsCommand):
         )
         parser.add_argument(
             '--check', action='store_true', dest='check_changes',
-            help='Exit with a non-zero status if model changes are missing backward_compatibility_test_app.',
+            help='Exit with a non-zero status if model changes are missing migrations.',
         )   # we need that?
 
     def handle(self, *app_labels, **options):
@@ -56,9 +56,9 @@ class Command(MakemigrationsCommand):
         self.validate_applications(app_labels)
 
         # we don't check conflicts as regular makemigrations command.
-        # we don't check if any backward_compatibility_test_app are applied before their dependencies as regular makemigrations command.
+        # we don't check if any migrations are applied before their dependencies as regular makemigrations command.
 
-        # load backward_compatibility_test_app using same loader as in regular command
+        # load migrations using same loader as in regular command
         loader = MigrationLoader(None, ignore_no_migrations=True)
 
         from_state = loader.project_state()

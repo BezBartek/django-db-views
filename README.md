@@ -124,6 +124,10 @@ view_definition = {
 }
 ```
 
+### Coming soon:
+- Materialized views
+- database table functions 
+
 
 _Please use the newest version. version 0.1.0 has backward
 incompatibility which is solved in version 0.1.1 and higher._
