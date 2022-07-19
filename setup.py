@@ -12,11 +12,16 @@ setup(
     name="django-db-views",
     version="0.1.2",
     description="Handle database views. "
-                "Allow to create backward_compatibility_test_app for database views. "
-                "View backward_compatibility_test_app using django code. "
+                "Allow to create migrations for database views. "
+                "View migrations using django code. "
                 "They can be reversed. "
                 "Changes in model view definition are detected automatically. "
                 "Support almost all options as regular makemigrations command",
+    keywords=[
+        'views', 'database views', 'django',
+        'database perspective', 'view migrations',
+        'database table function', 'django materialized views'
+    ],
     long_description=README,
     long_description_content_type="text/markdown",
     url="https://github.com/BezBartek/django-db-views",
