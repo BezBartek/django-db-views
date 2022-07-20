@@ -134,3 +134,15 @@ def test_move_up_and_down_through_simple_view_stages(
     # move to stag 1
     call_command("migrate", "test_app", "zero")
     assert not is_view_exists(SimpleViewWithoutDependencies._meta.db_table)
+
+
+@pytest.mark.django_db()
+def test_drop_view(
+        temp_migrations_dir, SimpleViewWithoutDependencies
+):
+    call_command("makeviewmigrations", "test_app")
+    assert (temp_migrations_dir / "0001_initial.py").exists()
+    del apps.all_models['test_app'][SimpleViewWithoutDependencies.__name__.lower()]
+    apps.clear_cache()
+    call_command("makeviewmigrations", "test_app", name="delete_view")
+    assert (temp_migrations_dir / "0002_delete_view.py").exists()

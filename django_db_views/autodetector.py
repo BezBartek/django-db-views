@@ -35,6 +35,7 @@ class ViewMigrationAutoDetector(MigrationAutodetector):
         # <END of copy paste from MigrationAutodetector>
 
         self.generate_views_operations(graph)
+        self.delete_old_views()
 
         if django.VERSION >= (3, 2):
             # we write custom detect cus views indexes are much more simpler.
@@ -127,16 +128,21 @@ class ViewMigrationAutoDetector(MigrationAutodetector):
         self.from_state.resolve_fields_and_relations()
         self.to_state.resolve_fields_and_relations()
 
-    def get_view_models(self)->dict:
+    def delete_old_views(self):
+        old_views = self.get_view_models(self.from_state)
+        new_views = self.get_view_models(self.to_state)
+
+    def get_view_models(self, state=None) -> dict:  # To musi rozrozniac na stary/nowy state. Usuwac modele
         view_models = {}
-        for app_label, models in apps.all_models.items():
+        all_models = state.apps.all_models if state else apps.all_models
+        for app_label, models in all_models.items():
             for model_name, model_class in models.items():
-                if issubclass(model_class, DBView):
+                if issubclass(model_class, DBView) or getattr(model_class._meta, "is_db_view", False):
                     key = (app_label, model_name)
                     view_models[key] = model_class
         return view_models
 
-    def is_same_views(self, current: str, new: str)->bool:
+    def is_same_views(self, current: str, new: str) -> bool:
         if not current:
             return False
         s1_words = filter(lambda x: len(x) != 0, re.split(pattern="[^a-zA-Z]*", string=current))
@@ -254,7 +260,8 @@ class ViewMigrationAutoDetector(MigrationAutodetector):
                 return current_view_definition
 
     def detect_index_changes(self):
-        pass
+        old_model_state = self.from_state
+        new_model_state = self.to_state
 
     def drop_indexes(self):
         pass

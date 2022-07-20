@@ -3,6 +3,9 @@ from typing import Union, Callable
 from django.db import models, connections, DEFAULT_DB_ALIAS
 
 
+# MEta klasa co ustawia is_db_view
+
+
 class DBView(models.Model):
     """
         Children should define:
@@ -12,7 +15,9 @@ class DBView(models.Model):
     view_definition: Union[Callable, str, dict]
 
     class Meta:
+        managed = False
         abstract = True
+        # is_db_view = True
 
 
 class DBMaterializedView(DBView):
