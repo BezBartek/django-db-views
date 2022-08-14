@@ -2,6 +2,7 @@ import pytest
 from django.apps import apps
 from django.core.management import call_command
 
+from django_db_views.db_view import DBViewsRegistry
 from tests.asserts_utils import is_view_exists
 from tests.fixturies import temp_migrations_dir, dynamic_models_cleanup  # noqa
 
@@ -76,15 +77,15 @@ def test_make_view_migration_for_db_view_based_on_queryset_with_dependencies_on_
 @pytest.mark.django_db(databases=['postgres', 'sqlite'], transaction=True)
 @pytest.mark.parametrize("database", ['postgres', 'sqlite'])
 def test_make_view_migration_for_db_raw_view_with_multiple_databases_support(
-        temp_migrations_dir, database, MultipleDBRawViewQuestionStat
+        temp_migrations_dir, database, MultipleDBRawView
 ):
     assert not (temp_migrations_dir / "0001_initial.py").exists()
-    assert not is_view_exists(MultipleDBRawViewQuestionStat._meta.db_table, using=database)
+    assert not is_view_exists(MultipleDBRawView._meta.db_table, using=database)
     call_command("makeviewmigrations", "test_app")
     assert (temp_migrations_dir / "0001_initial.py").exists()
     call_command("migrate", "test_app", database=database)
-    assert is_view_exists(MultipleDBRawViewQuestionStat._meta.db_table, using=database)
-    assert MultipleDBRawViewQuestionStat.objects.using(database).all().count() == 2
+    assert is_view_exists(MultipleDBRawView._meta.db_table, using=database)
+    assert MultipleDBRawView.objects.using(database).all().count() == 2
     call_command("migrate", "test_app", "zero", database=database) # after transactions tests we have to clean up.
 
 
@@ -103,7 +104,7 @@ def test_make_view_migration_for_db_queryset_view_with_multiple_databases_suppor
     assert MultipleDBQueryViewQuestionStat.objects.using(database).all().count() == 0
     call_command("migrate", "test_app", "zero", database=database)
     assert not is_view_exists(MultipleDBQueryViewQuestionStat._meta.db_table, using=database)
-    call_command("migrate", "test_app", "zero", database=database) # after transactions tests we have to clean up.
+    call_command("migrate", "test_app", "zero", database=database)  # after transactions tests we have to clean up.
 
 
 @pytest.mark.django_db()
@@ -144,5 +145,39 @@ def test_drop_view(
     assert (temp_migrations_dir / "0001_initial.py").exists()
     del apps.all_models['test_app'][SimpleViewWithoutDependencies.__name__.lower()]
     apps.clear_cache()
+    DBViewsRegistry.pop(SimpleViewWithoutDependencies._meta.db_table)
     call_command("makeviewmigrations", "test_app", name="delete_view")
     assert (temp_migrations_dir / "0002_delete_view.py").exists()
+    migrations = (temp_migrations_dir / "0002_delete_view.py").read()
+    assert "DropView" in migrations
+    assert "ViewDropRunPython" in migrations
+    call_command("migrate", "test_app", "0001")
+    assert is_view_exists(SimpleViewWithoutDependencies._meta.db_table)
+    call_command("migrate", "test_app")
+    assert not is_view_exists(SimpleViewWithoutDependencies._meta.db_table)
+    call_command("migrate", "test_app", "0001")
+    assert is_view_exists(SimpleViewWithoutDependencies._meta.db_table)
+
+
+@pytest.mark.parametrize("database", ['postgres', 'sqlite'])
+@pytest.mark.django_db(databases=['sqlite', 'postgres'], transaction=True)
+def test_drop_view_multiple_engines(
+        temp_migrations_dir, database, MultipleDBRawView
+):
+    call_command("makeviewmigrations", "test_app")
+    assert (temp_migrations_dir / "0001_initial.py").exists()
+    del apps.all_models['test_app'][MultipleDBRawView.__name__.lower()]
+    apps.clear_cache()
+    DBViewsRegistry.pop(MultipleDBRawView._meta.db_table)
+    call_command("makeviewmigrations", "test_app", name="delete_view")
+    assert (temp_migrations_dir / "0002_delete_view.py").exists()
+    migrations = (temp_migrations_dir / "0002_delete_view.py").read()
+    # both migrations are inside.
+    assert "engine='django.db.backends.sqlite3" in migrations
+    assert "engine='django.db.backends.postgresql" in migrations
+    call_command("migrate", "test_app", "0001", database=database)
+    assert is_view_exists(MultipleDBRawView._meta.db_table, using=database)
+    call_command("migrate", "test_app", database=database)
+    assert not is_view_exists(MultipleDBRawView._meta.db_table, using=database)
+    call_command("migrate", "test_app", "0001", database=database)
+    assert is_view_exists(MultipleDBRawView._meta.db_table, using=database)

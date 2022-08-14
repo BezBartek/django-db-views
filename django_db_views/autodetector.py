@@ -10,11 +10,11 @@ from django.db import connection, ProgrammingError
 from django.db.migrations.autodetector import MigrationAutodetector
 from django.db.migrations.graph import MigrationGraph
 
-from django_db_views.db_view import DBView, DBMaterializedView
-from django_db_views.operations import ViewRunPython
+from django_db_views.db_view import DBView, DBMaterializedView, DBViewsRegistry
+from django_db_views.operations import ViewRunPython, DBViewModelState, ViewDropRunPython
 from django_db_views.migration_functions import ForwardViewMigration, BackwardViewMigration, \
     ForwardMaterializedViewMigration, BackwardMaterializedViewMigration, ForwardViewMigrationBase, \
-    BackwardViewMigrationBase
+    BackwardViewMigrationBase, DropView, DropMaterializedView, DropViewMigration
 
 
 class ViewMigrationAutoDetector(MigrationAutodetector):
@@ -129,15 +129,37 @@ class ViewMigrationAutoDetector(MigrationAutodetector):
         self.to_state.resolve_fields_and_relations()
 
     def delete_old_views(self):
-        old_views = self.get_view_models(self.from_state)
-        new_views = self.get_view_models(self.to_state)
+        for (app_label, table_name), model_state in self.get_previous_view_models_state().items():
+            if model_state.table_name not in DBViewsRegistry:
+                self.add_operation(
+                    app_label,
+                    ViewDropRunPython(
+                        self.get_drop_migration_class(model_state.base_class)(
+                            model_state.table_name,
+                            engine=model_state.view_engine
+                        ),
+                        self.get_backward_migration_class(model_state.base_class)(
+                            model_state.view_definition,
+                            model_state.table_name,
+                            engine=model_state.view_engine
+                        ),
+                        atomic=False
+                    )
+                )
 
-    def get_view_models(self, state=None) -> dict:  # To musi rozrozniac na stary/nowy state. Usuwac modele
+    def get_previous_view_models_state(self) -> dict:
         view_models = {}
-        all_models = state.apps.all_models if state else apps.all_models
-        for app_label, models in all_models.items():
+        for (app_label, table_name), model_state in self.from_state.models.items():
+            if isinstance(model_state, DBViewModelState):
+                key = (app_label, table_name)
+                view_models[key] = model_state
+        return view_models
+
+    def get_current_view_models(self):
+        view_models = {}
+        for app_label, models in apps.all_models.items():
             for model_name, model_class in models.items():
-                if issubclass(model_class, DBView) or getattr(model_class._meta, "is_db_view", False):
+                if model_class._meta.db_table in DBViewsRegistry:
                     key = (app_label, model_name)
                     view_models[key] = model_class
         return view_models
@@ -155,7 +177,7 @@ class ViewMigrationAutoDetector(MigrationAutodetector):
         return True
 
     def generate_views_operations(self, graph: MigrationGraph) -> None:
-        view_models = self.get_view_models()
+        view_models = self.get_current_view_models()
         for (app_label, model_name), view_model in view_models.items():
             new_view_definition = self.get_view_definition_from_model(view_model)
             for engine, latest_view_definition in new_view_definition.items():
@@ -201,6 +223,14 @@ class ViewMigrationAutoDetector(MigrationAutodetector):
             return BackwardMaterializedViewMigration
         if issubclass(model, DBView):
             return BackwardViewMigration
+        else:
+            raise NotImplementedError
+
+    def get_drop_migration_class(self, model) -> Type[DropViewMigration]:
+        if issubclass(model, DBMaterializedView):
+            return DropMaterializedView
+        elif issubclass(model, DBView):
+            return DropView
         else:
             raise NotImplementedError
 
@@ -260,8 +290,7 @@ class ViewMigrationAutoDetector(MigrationAutodetector):
                 return current_view_definition
 
     def detect_index_changes(self):
-        old_model_state = self.from_state
-        new_model_state = self.to_state
+        pass
 
     def drop_indexes(self):
         pass

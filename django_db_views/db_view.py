@@ -1,12 +1,20 @@
 from typing import Union, Callable
 
 from django.db import models, connections, DEFAULT_DB_ALIAS
+from django.db.models.base import ModelBase
+
+DBViewsRegistry = {}
 
 
-# MEta klasa co ustawia is_db_view
+class DBViewModelBase(ModelBase):
+    def __new__(cls, *args, **kwargs):
+        new_class = super().__new__(cls, *args, **kwargs)
+        assert new_class._meta.managed is False, "For DB View managed must be se to false"
+        DBViewsRegistry[new_class._meta.db_table] = new_class
+        return new_class
 
 
-class DBView(models.Model):
+class DBView(models.Model, metaclass=DBViewModelBase):
     """
         Children should define:
             view_definition - define the view, can be callable or attribute (string)
@@ -17,11 +25,11 @@ class DBView(models.Model):
     class Meta:
         managed = False
         abstract = True
-        # is_db_view = True
 
 
 class DBMaterializedView(DBView):
     class Meta:
+        managed = False
         abstract = True
 
     @classmethod

@@ -40,10 +40,6 @@ class SimpleViewWithoutDependenciesTemplate:
                        ) A(id, name)
             """
 
-    class Meta:
-        managed = False
-        db_table = "simple_view_without_dependencies_template"
-
 
 class RawViewQuestionStatTemplate:
     question = models.ForeignKey(
@@ -85,7 +81,7 @@ class QueryViewQuestionStatTemplate:
         db_table = "question_stat"
 
 
-class MultipleDBRawViewQuestionStatTemplate:
+class MultipleDBRawViewTemplate:
     identifier = models.IntegerField(primary_key=True)
     name = models.TextField()
 

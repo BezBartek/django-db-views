@@ -52,3 +52,25 @@ class ForwardMaterializedViewMigration(ForwardViewMigrationBase):
 class BackwardMaterializedViewMigration(BackwardViewMigrationBase):
     DROP_COMMAND_TEMPLATE = "DROP MATERIALIZED VIEW IF EXISTS %s;"
     CREATE_COMMAND_TEMPLATE = "CREATE MATERIALIZED VIEW %s as %s;"
+
+
+class DropViewMigration(object):
+    DROP_COMMAND_TEMPLATE: str
+
+    def __init__(self, table_name: str, engine=None):
+        self.table_name = table_name
+        self.view_engine = engine
+
+    def __call__(self, apps, schema_editor):
+        if self.view_engine is None or self.view_engine == schema_editor.connection.settings_dict['ENGINE']:
+            schema_editor.execute(self.DROP_COMMAND_TEMPLATE % self.table_name)
+
+
+@deconstructible
+class DropMaterializedView(DropViewMigration):
+    DROP_COMMAND_TEMPLATE = "DROP MATERIALIZED VIEW IF EXISTS %s;"
+
+
+@deconstructible
+class DropView(DropViewMigration):
+    DROP_COMMAND_TEMPLATE = "DROP VIEW IF EXISTS %s;"

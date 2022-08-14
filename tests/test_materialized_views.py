@@ -26,6 +26,7 @@ def test_materialized_db_view_based_on_raw_sql_without_dependencies(
     assert not is_view_exists(SimpleMaterializedViewWithoutDependencies._meta.db_table)
 
 
+@pytest.mark.skip(reason="Future feature.")
 @pytest.mark.django_db(transaction=True)
 def test_materialized_db_view_based_on_raw_sql_with_indexes(
         temp_migrations_dir, SimpleMaterializedViewWithIndex
