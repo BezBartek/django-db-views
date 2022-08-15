@@ -41,14 +41,25 @@ class Command(MakemigrationsCommand):
             '--check', action='store_true', dest='check_changes',
             help='Exit with a non-zero status if model changes are missing migrations.',
         )   # we need that?
+        parser.add_argument(
+            "--scriptable",
+            action="store_true",
+            dest="scriptable",
+            help=(
+                "Divert log output and input prompts to stderr, writing only "
+                "paths of generated migration files to stdout."
+            ),
+        )
 
     def handle(self, *app_labels, **options):
         # get supported options.
+        self.written_files = []
         self.verbosity = options['verbosity']
         self.dry_run = options['dry_run']
         self.merge = options['merge']
         self.migration_name = options['name']
         self.include_header = options['include_header']
+        self.scriptable = options['scriptable']
         check_changes = options['check_changes']
 
         # validation application labels
@@ -91,6 +102,8 @@ class Command(MakemigrationsCommand):
 
         else:
             self.write_migration_files(changes)
+            if check_changes:
+                sys.exit(1)
 
     def validate_applications(self, app_labels: set):
         """it's copy paste from make migration command"""

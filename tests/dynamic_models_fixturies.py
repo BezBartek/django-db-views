@@ -1,10 +1,23 @@
 import pytest
 from django.db import models
 
-from tests.test_app.models import define_model, QuestionTemplate, SimpleViewWithoutDependenciesTemplate, ChoiceTemplate, \
+from tests.test_app.models import QuestionTemplate, SimpleViewWithoutDependenciesTemplate, ChoiceTemplate, \
     RawViewQuestionStatTemplate, QueryViewQuestionStatTemplate, MultipleDBRawViewTemplate, \
     MultipleDBQueryViewQuestionStatTemplate, SimpleMaterializedViewWithoutDependenciesTemplate, \
     SimpleMaterializedViewWithIndexTemplate
+
+
+def define_model(template_class, parent):
+    attributes = get_declared_class_attributes(template_class)
+    attrs = {
+        **attributes,
+        '__module__': 'tests.test_app.models'
+    }
+    return type(template_class.__name__.replace("Template", ""), (parent,), attrs)
+
+
+def get_declared_class_attributes(cls) -> dict:
+  return {key: value for key, value in cls.__dict__.items() if not key.startswith('__')}
 
 
 @pytest.fixture

@@ -4,19 +4,6 @@ from django.db.models import F, Index
 from django.utils import timezone
 
 
-def get_declared_class_attributes(cls) -> dict:
-  return {key: value for key, value in cls.__dict__.items() if not key.startswith('__')}
-
-
-def define_model(template_class, parent):
-    attributes = get_declared_class_attributes(template_class)
-    attrs = {
-        **attributes,
-        '__module__': 'tests.test_app.models'
-    }
-    return type(template_class.__name__.replace("Template", ""), (parent,), attrs)
-
-
 class QuestionTemplate:
     text = models.CharField(max_length=200)
     created = models.DateTimeField(default=timezone.now)
