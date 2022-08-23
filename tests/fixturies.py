@@ -30,9 +30,11 @@ def temp_migrations_dir(settings, tmpdir, mocker):
 
 @pytest.fixture(autouse=True, scope='function')
 def dynamic_models_cleanup():
-    yield None
-    # We delete all dynamically created models
-    test_app_models = list(apps.all_models['test_app'].keys())
-    for model_name in test_app_models:
-        del apps.all_models['test_app'][model_name]
-    apps.clear_cache()
+    try:
+        yield None
+    finally:
+        # We delete all dynamically created models
+        test_app_models = list(apps.all_models['test_app'].keys())
+        for model_name in test_app_models:
+            del apps.all_models['test_app'][model_name]
+        apps.clear_cache()

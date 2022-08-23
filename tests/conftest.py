@@ -2,7 +2,7 @@ import os
 
 from django.conf import settings
 import environ
-from .dynamic_models_fixturies import *  # noqa
+from .dynamic_models_fixtures import *  # noqa
 
 env = environ.Env()
 env.read_env(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), '.env'))
