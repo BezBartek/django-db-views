@@ -2,10 +2,12 @@ import pytest
 from django.core.management import call_command
 
 from tests.asserts_utils import is_view_exists
+from tests.decorators import roll_back_schema
 from tests.fixturies import temp_migrations_dir, dynamic_models_cleanup  # noqa
 
 
 @pytest.mark.django_db(transaction=True)
+@roll_back_schema
 def test_materialized_db_view_based_on_raw_sql_without_dependencies(
         temp_migrations_dir, SimpleMaterializedViewWithoutDependencies
 ):
@@ -28,6 +30,7 @@ def test_materialized_db_view_based_on_raw_sql_without_dependencies(
 
 @pytest.mark.skip(reason="Future feature.")
 @pytest.mark.django_db(transaction=True)
+@roll_back_schema
 def test_materialized_db_view_based_on_raw_sql_with_indexes(
         temp_migrations_dir, SimpleMaterializedViewWithIndex
 ):
