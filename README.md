@@ -10,6 +10,13 @@
 ### How to install?
   - `pip install django-db-views`
 
+### What we offer
+ - Database views
+ - Materialized views
+ - views schema migrations 
+ - indexing for materialized views (future)
+ - database table function (future)
+
 ### How to use?
    - add `django_db_views` to `INSTALLED_APPS`
    - use `makeviewmigrations` command to create migrations for view models
@@ -73,7 +80,7 @@
 
    using callable allow you to write view definition using ORM.
 
-- Ensure that you include `managed = False` in the DBView model's Meta class to prevent Django creating it's own migration. 
+- Ensure that you include `managed = False` in the DBView model's Meta class to prevent Django creating it's own migration.
 
 ### How view migrations work? 
    - DBView working as regular django model. You can use it in any query. 
@@ -124,10 +131,13 @@ view_definition = {
 }
 ```
 
-### Coming soon:
-- Materialized views
-- database table functions 
+### Materialized Views
+
+Just inherit from `DBMaterializedView` instead of regular `DBView`
+
+Materialzied View provide an extra class method to refresh view called `refresh`
 
 
+### Notes
 _Please use the newest version. version 0.1.0 has backward
 incompatibility which is solved in version 0.1.1 and higher._
