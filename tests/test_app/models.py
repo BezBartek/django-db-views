@@ -1,20 +1,7 @@
 from django.apps import apps
 from django.db import models
-from django.db.models import F
+from django.db.models import F, Index
 from django.utils import timezone
-
-
-def get_declared_class_attributes(cls) -> dict:
-  return {key: value for key, value in cls.__dict__.items() if not key.startswith('__')}
-
-
-def define_model(template_class, parent):
-    attributes = get_declared_class_attributes(template_class)
-    attrs = {
-        **attributes,
-        '__module__': 'tests.test_app.models'
-    }
-    return type(template_class.__name__.replace("Template", ""), (parent,), attrs)
 
 
 class QuestionTemplate:
@@ -39,10 +26,6 @@ class SimpleViewWithoutDependenciesTemplate:
                               ,(2, 'dummy_2')
                        ) A(id, name)
             """
-
-    class Meta:
-        managed = False
-        db_table = "simple_view_without_dependencies_template"
 
 
 class RawViewQuestionStatTemplate:
@@ -85,7 +68,7 @@ class QueryViewQuestionStatTemplate:
         db_table = "question_stat"
 
 
-class MultipleDBRawViewQuestionStatTemplate:
+class MultipleDBRawViewTemplate:
     identifier = models.IntegerField(primary_key=True)
     name = models.TextField()
 
@@ -129,3 +112,34 @@ class MultipleDBQueryViewQuestionStatTemplate:
     class Meta:
         managed = False
         db_table = "question_stat"
+
+
+# Materialized View
+class SimpleMaterializedViewWithoutDependenciesTemplate:
+    current_date_time = models.DateTimeField(primary_key=True)
+
+    view_definition = """
+              Select *
+                 From  (values (NOW())) A(current_date_time)
+            """
+
+    class Meta:
+        managed = False
+        db_table = "simple_materialized_view_without_dependencies"
+
+
+class SimpleMaterializedViewWithIndexTemplate:
+    current_date_time = models.DateTimeField(primary_key=True)
+
+    view_definition = """
+              Select *
+                 From  (values (NOW())) A(current_date_time)
+            """
+
+    class Meta:
+        managed = False
+        db_table = "simple_materialized_view_without_dependencies"
+        # only django 3.2 +
+        indexes = [
+            Index(fields=['current_date_time'])
+        ]

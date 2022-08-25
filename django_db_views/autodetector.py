@@ -1,5 +1,6 @@
 import re
 from itertools import zip_longest
+from typing import Type
 
 import django
 import six
@@ -9,9 +10,11 @@ from django.db import connection, ProgrammingError
 from django.db.migrations.autodetector import MigrationAutodetector
 from django.db.migrations.graph import MigrationGraph
 
-from django_db_views.db_view import DBView
-from django_db_views.operations import ViewRunPython
-from django_db_views.migration_functions import ForwardViewMigration, BackwardViewMigration
+from django_db_views.db_view import DBView, DBMaterializedView, DBViewsRegistry
+from django_db_views.operations import ViewRunPython, DBViewModelState, ViewDropRunPython
+from django_db_views.migration_functions import ForwardViewMigration, BackwardViewMigration, \
+    ForwardMaterializedViewMigration, BackwardMaterializedViewMigration, ForwardViewMigrationBase, \
+    BackwardViewMigrationBase, DropView, DropMaterializedView, DropViewMigration
 
 
 class ViewMigrationAutoDetector(MigrationAutodetector):
@@ -26,12 +29,21 @@ class ViewMigrationAutoDetector(MigrationAutodetector):
 
         # <START copy paste from MigrationAutodetector, depends on django version>
         if django.VERSION >= (4,):
-            self._detect_changes_preparation_django_version_four_and_above(convert_apps)
+            self._detect_changes_preparation_django_version_4_and_above(convert_apps)
         else:
-            self._detect_changes_preparation_django_below_version_four(convert_apps)
+            self._detect_changes_preparation_django_below_version_4(convert_apps)
         # <END of copy paste from MigrationAutodetector>
 
         self.generate_views_operations(graph)
+        self.delete_old_views()
+
+        if django.VERSION >= (3, 2):
+            # we write custom detect cus views indexes are much more simpler.
+            self.old_indexes = set()
+            self.new_indexes = set()
+            self.detect_index_changes()
+            self.drop_indexes()
+            self.generate_indexes()
 
         # <START copy paste from MigrationAutodetector>
         self._sort_migrations()
@@ -41,7 +53,7 @@ class ViewMigrationAutoDetector(MigrationAutodetector):
         return self.migrations
         # <END end of copy paste from MigrationAutodetector>
 
-    def _detect_changes_preparation_django_below_version_four(self, convert_apps):
+    def _detect_changes_preparation_django_below_version_4(self, convert_apps):
         self.generated_operations = {}
         self.altered_indexes = {}
 
@@ -79,7 +91,7 @@ class ViewMigrationAutoDetector(MigrationAutodetector):
                 else:
                     self.new_model_keys.append((al, mn))
 
-    def _detect_changes_preparation_django_version_four_and_above(self, convert_apps):
+    def _detect_changes_preparation_django_version_4_and_above(self, convert_apps):
         self.generated_operations = {}
         self.altered_indexes = {}
         self.altered_constraints = {}
@@ -116,16 +128,43 @@ class ViewMigrationAutoDetector(MigrationAutodetector):
         self.from_state.resolve_fields_and_relations()
         self.to_state.resolve_fields_and_relations()
 
-    def get_view_models(self)->dict:
+    def delete_old_views(self):
+        for (app_label, table_name), model_state in self.get_previous_view_models_state().items():
+            if model_state.table_name not in DBViewsRegistry:
+                self.add_operation(
+                    app_label,
+                    ViewDropRunPython(
+                        self.get_drop_migration_class(model_state.base_class)(
+                            model_state.table_name,
+                            engine=model_state.view_engine
+                        ),
+                        self.get_backward_migration_class(model_state.base_class)(
+                            model_state.view_definition,
+                            model_state.table_name,
+                            engine=model_state.view_engine
+                        ),
+                        atomic=False
+                    )
+                )
+
+    def get_previous_view_models_state(self) -> dict:
+        view_models = {}
+        for (app_label, table_name), model_state in self.from_state.models.items():
+            if isinstance(model_state, DBViewModelState):
+                key = (app_label, table_name)
+                view_models[key] = model_state
+        return view_models
+
+    def get_current_view_models(self):
         view_models = {}
         for app_label, models in apps.all_models.items():
             for model_name, model_class in models.items():
-                if issubclass(model_class, DBView):
+                if model_class._meta.db_table in DBViewsRegistry:
                     key = (app_label, model_name)
                     view_models[key] = model_class
         return view_models
 
-    def is_same_views(self, current: str, new: str)->bool:
+    def is_same_views(self, current: str, new: str) -> bool:
         if not current:
             return False
         s1_words = filter(lambda x: len(x) != 0, re.split(pattern="[^a-zA-Z]*", string=current))
@@ -138,7 +177,7 @@ class ViewMigrationAutoDetector(MigrationAutodetector):
         return True
 
     def generate_views_operations(self, graph: MigrationGraph) -> None:
-        view_models = self.get_view_models()
+        view_models = self.get_current_view_models()
         for (app_label, model_name), view_model in view_models.items():
             new_view_definition = self.get_view_definition_from_model(view_model)
             for engine, latest_view_definition in new_view_definition.items():
@@ -156,14 +195,44 @@ class ViewMigrationAutoDetector(MigrationAutodetector):
                     self.add_operation(
                         app_label,
                         ViewRunPython(
-                            ForwardViewMigration(latest_view_definition.strip(";"),
-                                                 view_model._meta.db_table, engine=engine),
-                            BackwardViewMigration(current_view_definition.strip(";"),
-                                                  view_model._meta.db_table, engine=engine),
+                            self.get_forward_migration_class(view_model)(
+                                latest_view_definition.strip(";"),
+                                view_model._meta.db_table,
+                                engine=engine
+                            ),
+                            self.get_backward_migration_class(view_model)(
+                                current_view_definition.strip(";"),
+                                view_model._meta.db_table,
+                                engine=engine
+                            ),
                             atomic=False
                         ),
                         dependencies=dependencies,
                     )
+
+    def get_forward_migration_class(self, model) -> Type[ForwardViewMigrationBase]:
+        if issubclass(model, DBMaterializedView):
+            return ForwardMaterializedViewMigration
+        if issubclass(model, DBView):
+            return ForwardViewMigration
+        else:
+            raise NotImplementedError
+
+    def get_backward_migration_class(self, model) -> Type[BackwardViewMigrationBase]:
+        if issubclass(model, DBMaterializedView):
+            return BackwardMaterializedViewMigration
+        if issubclass(model, DBView):
+            return BackwardViewMigration
+        else:
+            raise NotImplementedError
+
+    def get_drop_migration_class(self, model) -> Type[DropViewMigration]:
+        if issubclass(model, DBMaterializedView):
+            return DropMaterializedView
+        elif issubclass(model, DBView):
+            return DropView
+        else:
+            raise NotImplementedError
 
     def get_view_definition_from_model(self, view_model: DBView) -> dict:
         view_definitions = {}
@@ -219,3 +288,12 @@ class ViewMigrationAutoDetector(MigrationAutodetector):
                 current_view_definition = ""
             finally:
                 return current_view_definition
+
+    def detect_index_changes(self):
+        pass
+
+    def drop_indexes(self):
+        pass
+
+    def generate_indexes(self):
+        pass
