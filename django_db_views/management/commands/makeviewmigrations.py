@@ -7,6 +7,7 @@ from django.db.migrations.state import ProjectState
 from django.core.management.commands.makemigrations import Command as MakemigrationsCommand
 
 from django_db_views.autodetector import ViewMigrationAutoDetector
+from django_db_views.context_manager import view_migration_context
 
 
 class Command(MakemigrationsCommand):
@@ -51,6 +52,7 @@ class Command(MakemigrationsCommand):
             ),
         )
 
+    @view_migration_context()
     def handle(self, *app_labels, **options):
         # get supported options.
         self.written_files = []

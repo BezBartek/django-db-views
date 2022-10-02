@@ -5,6 +5,10 @@ Changelogs starts from version 0.1.3
 
 ## Released
 
+### [0.1.4]
+- Fix broken migration from 0.1.3 version.  https://github.com/BezBartek/django-db-views/issues/20
+
+
 ### [0.1.3]
 - Detect and delete removed views or views implementations for specified engines.
 - Materialized Views

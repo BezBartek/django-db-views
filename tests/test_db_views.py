@@ -103,6 +103,8 @@ def test_make_view_migration_for_db_queryset_view_with_multiple_databases_suppor
     assert not is_view_exists(MultipleDBQueryViewQuestionStat._meta.db_table, using=database)
     call_command("makemigrations", "test_app")
     call_command("makeviewmigrations", "test_app")
+    call_command("makemigrations", "test_app")
+    assert len(temp_migrations_dir.listdir()) == 3, temp_migrations_dir.listdir()
     assert (temp_migrations_dir / "0001_initial.py").exists()
     call_command("migrate", "test_app", database=database)
     assert is_view_exists(MultipleDBQueryViewQuestionStat._meta.db_table, using=database)
