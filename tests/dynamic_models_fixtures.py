@@ -4,7 +4,7 @@ from django.db import models
 from tests.test_app.models import QuestionTemplate, SimpleViewWithoutDependenciesTemplate, ChoiceTemplate, \
     RawViewQuestionStatTemplate, QueryViewQuestionStatTemplate, MultipleDBRawViewTemplate, \
     MultipleDBQueryViewQuestionStatTemplate, SimpleMaterializedViewWithoutDependenciesTemplate, \
-    SimpleMaterializedViewWithIndexTemplate
+    SimpleMaterializedViewWithIndexTemplate, SecondSimpleViewWithoutDependenciesTemplate
 
 
 def define_model(template_class, parent):
@@ -34,6 +34,12 @@ def Choice():
 def SimpleViewWithoutDependencies():
     from django_db_views.db_view import DBView
     return define_model(SimpleViewWithoutDependenciesTemplate, DBView)
+
+
+@pytest.fixture
+def SecondSimpleViewWithoutDependencies():
+    from django_db_views.db_view import DBView
+    return define_model(SecondSimpleViewWithoutDependenciesTemplate, DBView)
 
 
 @pytest.fixture

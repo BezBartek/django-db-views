@@ -5,6 +5,10 @@ Changelogs starts from version 0.1.3
 
 ## Released
 
+### [0.1.5]
+- Fix view_migration_context
+- Fix function that generate table hash name, to return lower case strings always 
+
 ### [0.1.4]
 - Fix broken migration from 0.1.3 version.  https://github.com/BezBartek/django-db-views/issues/20
 

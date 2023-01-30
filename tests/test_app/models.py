@@ -28,6 +28,18 @@ class SimpleViewWithoutDependenciesTemplate:
             """
 
 
+class SecondSimpleViewWithoutDependenciesTemplate:
+    identifier = models.IntegerField(primary_key=True)
+    name = models.TextField()
+
+    view_definition = """
+              Select *
+                 From  (values (1, 'dummy_1')
+                              ,(2, 'dummy_2')
+                       ) A(id, name)
+            """
+
+
 class RawViewQuestionStatTemplate:
     question = models.ForeignKey(
         "Question", on_delete=models.DO_NOTHING, related_name="question", primary_key=True

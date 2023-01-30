@@ -159,12 +159,70 @@ def test_drop_view(
     migrations = (temp_migrations_dir / "0002_delete_view.py").read()
     assert "DropView" in migrations
     assert "ViewDropRunPython" in migrations
+    # move forward and backward
     call_command("migrate", "test_app", "0001")
     assert is_view_exists(SimpleViewWithoutDependencies._meta.db_table)
     call_command("migrate", "test_app")
     assert not is_view_exists(SimpleViewWithoutDependencies._meta.db_table)
     call_command("migrate", "test_app", "0001")
     assert is_view_exists(SimpleViewWithoutDependencies._meta.db_table)
+
+
+@pytest.mark.django_db(transaction=True)
+@roll_back_schema
+def test_drop_view_and_update_existing_view_in_same_migration(
+        temp_migrations_dir, SimpleViewWithoutDependencies, SecondSimpleViewWithoutDependencies
+):
+    call_command("makeviewmigrations", "test_app")
+    assert (temp_migrations_dir / "0001_initial.py").exists()
+    # Delete existing model
+    del apps.all_models['test_app'][SecondSimpleViewWithoutDependencies.__name__.lower()]
+    apps.clear_cache()
+    DBViewsRegistry.pop(SecondSimpleViewWithoutDependencies._meta.db_table)
+    # Modify existing model
+    apps.all_models['test_app']["simpleviewwithoutdependencies"].view_definition = """
+        Select *
+         From  (values (3, 'dummy_3')) A(id, name)
+    """
+    # Run migration
+    call_command("makeviewmigrations", "test_app", name="delete_view_and_update_view")
+    assert (temp_migrations_dir / "0002_delete_view_and_update_view.py").exists()
+    migrations = (temp_migrations_dir / "0002_delete_view_and_update_view.py").read()
+    assert "DropView" in migrations
+    assert "ViewDropRunPython" in migrations
+    assert "ViewRunPython" in migrations
+
+
+@pytest.mark.django_db(transaction=True)
+@roll_back_schema
+def test_drop_view_and_update_existing_view_in_next_migration(
+        temp_migrations_dir, SimpleViewWithoutDependencies, SecondSimpleViewWithoutDependencies
+):
+    call_command("makeviewmigrations", "test_app")
+    assert (temp_migrations_dir / "0001_initial.py").exists()
+    # Delete existing model
+    del apps.all_models['test_app'][SecondSimpleViewWithoutDependencies.__name__.lower()]
+    apps.clear_cache()
+    DBViewsRegistry.pop(SecondSimpleViewWithoutDependencies._meta.db_table)
+    # Run migration
+    call_command("makeviewmigrations", "test_app", name="delete_view")
+    assert (temp_migrations_dir / "0002_delete_view.py").exists()
+    migrations = (temp_migrations_dir / "0002_delete_view.py").read()
+    assert "DropView" in migrations
+    assert "ViewDropRunPython" in migrations
+    assert "ViewRunPython" not in migrations
+    # Generate model representaions
+    call_command("makemigrations", "test_app", name="create_models")
+    # Modify existing model
+    apps.all_models['test_app']["simpleviewwithoutdependencies"].view_definition = """
+      Select *
+         From  (values (3, 'dummy_3')) A(id, name)
+    """
+    call_command("makeviewmigrations", "test_app", name="update_view")
+    assert (temp_migrations_dir / "0004_update_view.py").exists()
+    migrations = (temp_migrations_dir / "0004_update_view.py").read()
+    assert "ViewRunPython" in migrations
+    assert "DropView" not in migrations
 
 
 @pytest.mark.django_db(databases=['sqlite', 'postgres'], transaction=True)

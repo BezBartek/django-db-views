@@ -7,7 +7,7 @@ from django_db_views.migration_functions import ForwardMaterializedViewMigration
 
 
 def get_table_engine_name_hash(table_name, engine):
-    return f"{table_name}_{engine}"
+    return f"{table_name}_{engine}".lower()
 
 
 class DBViewModelState(ModelState):
