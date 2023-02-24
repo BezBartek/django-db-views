@@ -1,10 +1,10 @@
 # django-db-views
-|  |  |                                                                                                    |
-|--------------------|---------------------|----------------------------------------------------------------------------------------------------|
-| :memo: | **License** | [![License](https://img.shields.io/:license-mit-blue.svg)](http://doge.mit-license.org)            |
-| :package: | **PyPi** | [![PyPi](https://badge.fury.io/py/django-db-views.svg)](https://pypi.org/project/django-db-views/) |
-| <img src="https://cdn.iconscout.com/icon/free/png-256/django-1-282754.png" width="22px" height="22px" align="center" /> | **Django Versions** | 2.2 to 4.0                                                                                         |
-| <img src="http://www.iconarchive.com/download/i73027/cornmanthe3rd/plex/Other-python.ico" width="22px" height="22px" align="center" /> | **Python Versions** | 3.6 to 3.10                                                                                        |
+
+
+[![License](https://img.shields.io/:license-mit-blue.svg)](http://doge.mit-license.org)  
+[![PyPi](https://badge.fury.io/py/django-db-views.svg)](https://pypi.org/project/django-db-views/)  
+**Django Versions** 2.2 to 4.1  
+**Python Versions** 3.6 to 3.11 
 
 
 ### How to install?
