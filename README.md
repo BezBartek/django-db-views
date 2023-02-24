@@ -70,7 +70,11 @@
     class ExampleView(DBView):
         @staticmethod
         def view_definition():
-            return str(SomeModel.objects.all().query)
+            #  Note for MySQL users:
+            #    In the case of MySQL you might have to use: 
+            #    connection.cursor().mogrify(*queryset.query.sql_with_params()).decode() instead of str method to get valid sql statement from Query.
+            return str(SomeModel.objects.all().query)  
+
         # OR
         view_definition = lambda: str(SomeModel.objects.all().query)
         class Meta:
