@@ -5,6 +5,9 @@ Changelogs starts from version 0.1.3
 
 ## Released
 
+### [0.1.6]
+- Adjusted tests to django 4.2
+
 ### [0.1.5]
 - Fix view_migration_context
 - Fix function that generate table hash name, to return lower case strings always 
