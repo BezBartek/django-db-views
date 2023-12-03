@@ -3,8 +3,8 @@
 
 [![License](https://img.shields.io/:license-mit-blue.svg)](http://doge.mit-license.org)  
 [![PyPi](https://badge.fury.io/py/django-db-views.svg)](https://pypi.org/project/django-db-views/)  
-**Django Versions** 2.2 to 4.1  
-**Python Versions** 3.6 to 3.11 
+**Django Versions** 2.2 to 4.2+  
+**Python Versions** 3.8 to 3.11 
 
 
 ### How to install?

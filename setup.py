@@ -10,7 +10,7 @@ README = (HERE / "README.md").read_text()
 # This call to setup() does all the work
 setup(
     name="django-db-views",
-    version="0.1.5",
+    version="0.1.6",
     description="Handle database views. "
                 "Allow to create migrations for database views. "
                 "View migrations using django code. "
@@ -34,6 +34,8 @@ setup(
         "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
+        "Programming Language :: Python :: 3.10",
+        "Programming Language :: Python :: 3.11",
     ],
     packages=find_packages(exclude=["test"]),
     include_package_data=True,
