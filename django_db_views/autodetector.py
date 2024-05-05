@@ -7,26 +7,39 @@ import six
 from django.apps import apps
 from django.conf import settings
 from django.db import connection, ProgrammingError
+from django.db.migrations import SeparateDatabaseAndState
 from django.db.migrations.autodetector import MigrationAutodetector
 from django.db.migrations.graph import MigrationGraph
 
 from django_db_views.db_view import DBView, DBMaterializedView, DBViewsRegistry
-from django_db_views.operations import ViewRunPython, DBViewModelState, ViewDropRunPython
-from django_db_views.migration_functions import ForwardViewMigration, BackwardViewMigration, \
-    ForwardMaterializedViewMigration, BackwardMaterializedViewMigration, ForwardViewMigrationBase, \
-    BackwardViewMigrationBase, DropView, DropMaterializedView, DropViewMigration
+from django_db_views.operations import (
+    ViewRunPython,
+    DBViewModelState,
+    ViewDropRunPython,
+)
+from django_db_views.migration_functions import (
+    ForwardViewMigration,
+    BackwardViewMigration,
+    ForwardMaterializedViewMigration,
+    BackwardMaterializedViewMigration,
+    ForwardViewMigrationBase,
+    BackwardViewMigrationBase,
+    DropView,
+    DropMaterializedView,
+    DropViewMigration,
+)
 
 
 class ViewMigrationAutoDetector(MigrationAutodetector):
     """
-        We overwritten only _detect_changes function.
-        It's almost same code as in regular function,
-        we just removed generating other operations, and instead of them added our detection.
-        rest methods are fully our code which we use for detection.
-        It's detect only view model changes.
+    We overwritten only _detect_changes function.
+    It's almost same code as in regular function,
+    we just removed generating other operations, and instead of them added our detection.
+    rest methods are fully our code which we use for detection.
+    It's detect only view model changes.
     """
-    def _detect_changes(self, convert_apps=None, graph=None) -> dict:
 
+    def _detect_changes(self, convert_apps=None, graph=None) -> dict:
         # <START copy paste from MigrationAutodetector, depends on django version>
         if django.VERSION >= (4,):
             self._detect_changes_preparation_django_version_4_and_above(convert_apps)
@@ -82,9 +95,8 @@ class ViewMigrationAutoDetector(MigrationAutodetector):
             model = self.new_apps.get_model(al, mn)
             if not model._meta.managed:
                 self.new_unmanaged_keys.append((al, mn))
-            elif (
-                    al not in self.from_state.real_apps or
-                    (convert_apps and al in convert_apps)
+            elif al not in self.from_state.real_apps or (
+                convert_apps and al in convert_apps
             ):
                 if model._meta.proxy:
                     self.new_proxy_keys.append((al, mn))
@@ -105,22 +117,21 @@ class ViewMigrationAutoDetector(MigrationAutodetector):
         self.new_proxy_keys = set()
         self.new_unmanaged_keys = set()
         for (app_label, model_name), model_state in self.from_state.models.items():
-            if not model_state.options.get('managed', True):
+            if not model_state.options.get("managed", True):
                 self.old_unmanaged_keys.add((app_label, model_name))
             elif app_label not in self.from_state.real_apps:
-                if model_state.options.get('proxy'):
+                if model_state.options.get("proxy"):
                     self.old_proxy_keys.add((app_label, model_name))
                 else:
                     self.old_model_keys.add((app_label, model_name))
 
         for (app_label, model_name), model_state in self.to_state.models.items():
-            if not model_state.options.get('managed', True):
+            if not model_state.options.get("managed", True):
                 self.new_unmanaged_keys.add((app_label, model_name))
-            elif (
-                app_label not in self.from_state.real_apps or
-                (convert_apps and app_label in convert_apps)
+            elif app_label not in self.from_state.real_apps or (
+                convert_apps and app_label in convert_apps
             ):
-                if model_state.options.get('proxy'):
+                if model_state.options.get("proxy"):
                     self.new_proxy_keys.add((app_label, model_name))
                 else:
                     self.new_model_keys.add((app_label, model_name))
@@ -129,22 +140,24 @@ class ViewMigrationAutoDetector(MigrationAutodetector):
         self.to_state.resolve_fields_and_relations()
 
     def delete_old_views(self):
-        for (app_label, table_name), model_state in self.get_previous_view_models_state().items():
+        for (
+            app_label,
+            table_name,
+        ), model_state in self.get_previous_view_models_state().items():
             if model_state.table_name not in DBViewsRegistry:
                 self.add_operation(
                     app_label,
                     ViewDropRunPython(
                         self.get_drop_migration_class(model_state.base_class)(
-                            model_state.table_name,
-                            engine=model_state.view_engine
+                            model_state.table_name, engine=model_state.view_engine
                         ),
                         self.get_backward_migration_class(model_state.base_class)(
                             model_state.view_definition,
                             model_state.table_name,
-                            engine=model_state.view_engine
+                            engine=model_state.view_engine,
                         ),
-                        atomic=False
-                    )
+                        atomic=False,
+                    ),
                 )
 
     def get_previous_view_models_state(self) -> dict:
@@ -167,8 +180,12 @@ class ViewMigrationAutoDetector(MigrationAutodetector):
     def is_same_views(self, current: str, new: str) -> bool:
         if not current:
             return False
-        s1_words = filter(lambda x: len(x) != 0, re.split(pattern="[^a-zA-Z]*", string=current))
-        s2_words = filter(lambda x: len(x) != 0, re.split(pattern="[^a-zA-Z]*", string=new))
+        s1_words = filter(
+            lambda x: len(x) != 0, re.split(pattern="[^a-zA-Z]*", string=current)
+        )
+        s2_words = filter(
+            lambda x: len(x) != 0, re.split(pattern="[^a-zA-Z]*", string=new)
+        )
         for w1, w2 in zip_longest(s1_words, s2_words):
             if not w1 or not w2:
                 return False
@@ -184,7 +201,9 @@ class ViewMigrationAutoDetector(MigrationAutodetector):
                 current_view_definition = self.get_previous_view_definition_state(
                     graph, app_label, view_model._meta.db_table, engine
                 )
-                if not self.is_same_views(current_view_definition, latest_view_definition):
+                if not self.is_same_views(
+                    current_view_definition, latest_view_definition
+                ):
                     # Depend on all bases
                     model_state = self.to_state.models[app_label, model_name]
                     dependencies = []
@@ -198,14 +217,14 @@ class ViewMigrationAutoDetector(MigrationAutodetector):
                             self.get_forward_migration_class(view_model)(
                                 latest_view_definition.strip(";"),
                                 view_model._meta.db_table,
-                                engine=engine
+                                engine=engine,
                             ),
                             self.get_backward_migration_class(view_model)(
                                 current_view_definition.strip(";"),
                                 view_model._meta.db_table,
-                                engine=engine
+                                engine=engine,
                             ),
-                            atomic=False
+                            atomic=False,
                         ),
                         dependencies=dependencies,
                     )
@@ -243,13 +262,19 @@ class ViewMigrationAutoDetector(MigrationAutodetector):
 
         if isinstance(raw_view_definition, dict):
             for engine, definition in raw_view_definition.items():
-                view_definitions[engine] = self.get_cleaned_view_definition_value(definition)
+                view_definitions[engine] = self.get_cleaned_view_definition_value(
+                    definition
+                )
         else:
-            engine = settings.DATABASES['default']['ENGINE']
-            view_definitions[engine] = self.get_cleaned_view_definition_value(raw_view_definition)
+            engine = settings.DATABASES["default"]["ENGINE"]
+            view_definitions[engine] = self.get_cleaned_view_definition_value(
+                raw_view_definition
+            )
         return view_definitions
 
-    def get_previous_view_definition_state(self, graph: MigrationGraph, app_label: str, for_table_name: str, engine: str):
+    def get_previous_view_definition_state(
+        self, graph: MigrationGraph, app_label: str, for_table_name: str, engine: str
+    ) -> str:
         nodes = graph.leaf_nodes(app_label)
         last_node = nodes[0] if nodes else None
 
@@ -258,24 +283,64 @@ class ViewMigrationAutoDetector(MigrationAutodetector):
             if migration.operations:
                 for operation in migration.operations:
                     if isinstance(operation, ViewRunPython):
-                        table_name = operation.code.table_name
-                        previous_view_definition = operation.code.view_definition
-                        previous_view_engine = operation.code.view_engine \
-                            if hasattr(operation.code, 'view_engine') and operation.code.view_engine \
-                            else settings.DATABASES['default']['ENGINE']
-                        if table_name == for_table_name and previous_view_engine == engine:
-                            return previous_view_definition.strip()
+                        (
+                            table_name,
+                            previous_view_engine,
+                        ) = self._get_view_identifiers_from_operation(operation)
+                        if (
+                            table_name == for_table_name
+                            and previous_view_engine == engine
+                        ):
+                            return operation.code.view_definition.strip()
+                    elif isinstance(operation, SeparateDatabaseAndState):
+                        view_operations = list(
+                            filter(
+                                lambda op: isinstance(op, ViewRunPython),
+                                operation.database_operations,
+                            )
+                        )
+                        if view_operations:
+                            assert (
+                                len(view_operations) <= 1
+                            ), "SeparateDatabaseAndState can't contain more than one ViewRunPython operation"
+                            view_operation = view_operations[0]
+                            (
+                                table_name,
+                                previous_view_engine,
+                            ) = self._get_view_identifiers_from_operation(
+                                view_operation
+                            )
+                            if (
+                                table_name == for_table_name
+                                and previous_view_engine == engine
+                            ):
+                                return view_operation.code.view_definition.strip()
             # right now i get only migrations from the same app.
-            app_parents = list(sorted(filter(lambda x: x[0] == app_label, graph.node_map[last_node].parents)))
+            app_parents = list(
+                sorted(
+                    filter(
+                        lambda x: x[0] == app_label, graph.node_map[last_node].parents
+                    )
+                )
+            )
             if app_parents:
                 last_node = app_parents[-1]
-            else:   # if no parents mean we found initial migration
+            else:  # if no parents mean we found initial migration
                 last_node = None
         return ""
 
+    def _get_view_identifiers_from_operation(self, operation) -> tuple[str, str]:
+        table_name = operation.code.table_name
+        if hasattr(operation.code, "view_engine") and operation.code.view_engine:
+            engine = operation.code.view_engine
+        else:
+            engine = settings.DATABASES["default"]["ENGINE"]
+        return table_name, engine
+
     def get_cleaned_view_definition_value(self, view_definition: str) -> str:
-        assert isinstance(view_definition, str), \
-            "View definition must be callable and return string or be itself a string."
+        assert isinstance(
+            view_definition, str
+        ), "View definition must be callable and return string or be itself a string."
         return view_definition.strip()
 
     def get_current_view_definition_from_database(self, table_name: str) -> str:
