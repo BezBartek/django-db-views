@@ -5,6 +5,7 @@ from django.core.management import call_command
 from django_db_views.db_view import DBViewsRegistry
 from tests.asserts_utils import is_view_exists
 from tests.decorators import roll_back_schema
+from tests.utils import get_base_path
 
 
 @pytest.mark.django_db(transaction=True)
@@ -273,3 +274,36 @@ def test_drop_view_multiple_engines(temp_migrations_dir, database, MultipleDBRaw
     assert not is_view_exists(MultipleDBRawView._meta.db_table, using=database)
     call_command("migrate", "test_app", "0001", database=database)
     assert is_view_exists(MultipleDBRawView._meta.db_table, using=database)
+
+
+@pytest.mark.django_db(transaction=True)
+@roll_back_schema
+def test_support_view_migrations_wrapped_in_sparate_database_and_state(
+    temp_migrations_dir, SimpleViewWithoutDependencies
+):
+    initial_migration = temp_migrations_dir / "0001_initial.py"
+    with open(
+        get_base_path()
+        / "tests"
+        / "migrations_samples"
+        / "separate_database_and_state_migration.py"
+    ) as file:
+        initial_migration.write_text(file.read(), encoding="utf-8")
+    assert (temp_migrations_dir / "0001_initial.py").exists()
+    # No changes, no view migration created
+    call_command("makeviewmigrations", "test_app")
+    assert len(temp_migrations_dir.listdir()) == 2
+    # Modify simple view, view migration created
+    apps.all_models["test_app"]["simpleviewwithoutdependencies"].view_definition = """
+      Select *
+         From  (values (3, 'dummy_3')) A(id, name)
+    """
+    call_command("makeviewmigrations", "test_app")
+    assert len(temp_migrations_dir.listdir()) == 3
+    # migrate it
+    call_command("migrate", "test_app")
+    assert is_view_exists(SimpleViewWithoutDependencies._meta.db_table)
+    assert SimpleViewWithoutDependencies.objects.all().count() == 1
+    # check that backward capability works
+    call_command("migrate", "test_app", "0001")
+    assert SimpleViewWithoutDependencies.objects.all().count() == 2

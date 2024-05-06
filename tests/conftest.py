@@ -1,14 +1,11 @@
-import os
-
 from django.conf import settings
 import environ
 from .dynamic_models_fixtures import *  # noqa
 from tests.fixturies import temp_migrations_dir, dynamic_models_cleanup  # noqa
+from .utils import get_base_path
 
 env = environ.Env()
-env.read_env(
-    os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), ".env")
-)
+env.read_env(get_base_path() / ".env")
 
 pytest_plugins = ()
 
