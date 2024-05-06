@@ -304,6 +304,6 @@ def test_support_view_migrations_wrapped_in_sparate_database_and_state(
     call_command("migrate", "test_app")
     assert is_view_exists(SimpleViewWithoutDependencies._meta.db_table)
     assert SimpleViewWithoutDependencies.objects.all().count() == 1
-    # check that backward capability
+    # check that backward capability works
     call_command("migrate", "test_app", "0001")
     assert SimpleViewWithoutDependencies.objects.all().count() == 2
