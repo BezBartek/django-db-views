@@ -16,18 +16,33 @@ class ViewMigration(object):
 class ForwardViewMigrationBase(ViewMigration):
     def __call__(self, apps, schema_editor):
         if self.view_definition:
-            if self.view_engine is None or self.view_engine == schema_editor.connection.settings_dict['ENGINE']:
+            if (
+                self.view_engine is None
+                or self.view_engine == schema_editor.connection.settings_dict["ENGINE"]
+            ):
                 schema_editor.execute(self.DROP_COMMAND_TEMPLATE % self.table_name)
-                schema_editor.execute(self.CREATE_COMMAND_TEMPLATE % (self.table_name, self.view_definition))
+                schema_editor.execute(
+                    self.CREATE_COMMAND_TEMPLATE
+                    % (self.table_name, self.view_definition)
+                )
 
 
 class BackwardViewMigrationBase(ViewMigration):
     def __call__(self, apps, schema_editor):
-        if self.view_engine is None or self.view_engine == schema_editor.connection.settings_dict['ENGINE']:
+        if (
+            self.view_engine is None
+            or self.view_engine == schema_editor.connection.settings_dict["ENGINE"]
+        ):
             schema_editor.execute(self.DROP_COMMAND_TEMPLATE % self.table_name)
         if self.view_definition:
-            if self.view_engine is None or self.view_engine == schema_editor.connection.settings_dict['ENGINE']:
-                schema_editor.execute(self.CREATE_COMMAND_TEMPLATE % (self.table_name, self.view_definition))
+            if (
+                self.view_engine is None
+                or self.view_engine == schema_editor.connection.settings_dict["ENGINE"]
+            ):
+                schema_editor.execute(
+                    self.CREATE_COMMAND_TEMPLATE
+                    % (self.table_name, self.view_definition)
+                )
 
 
 @deconstructible
@@ -62,7 +77,10 @@ class DropViewMigration(object):
         self.view_engine = engine
 
     def __call__(self, apps, schema_editor):
-        if self.view_engine is None or self.view_engine == schema_editor.connection.settings_dict['ENGINE']:
+        if (
+            self.view_engine is None
+            or self.view_engine == schema_editor.connection.settings_dict["ENGINE"]
+        ):
             schema_editor.execute(self.DROP_COMMAND_TEMPLATE % self.table_name)
 
 

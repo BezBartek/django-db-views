@@ -10,7 +10,9 @@ class QuestionTemplate:
 
 
 class ChoiceTemplate:
-    question = models.ForeignKey("Question", on_delete=models.CASCADE, related_name='choices')
+    question = models.ForeignKey(
+        "Question", on_delete=models.CASCADE, related_name="choices"
+    )
     text = models.CharField(max_length=200)
     votes = models.IntegerField(default=0)
 
@@ -42,7 +44,10 @@ class SecondSimpleViewWithoutDependenciesTemplate:
 
 class RawViewQuestionStatTemplate:
     question = models.ForeignKey(
-        "Question", on_delete=models.DO_NOTHING, related_name="question", primary_key=True
+        "Question",
+        on_delete=models.DO_NOTHING,
+        related_name="question",
+        primary_key=True,
     )
     total_choices = models.IntegerField()
 
@@ -63,16 +68,20 @@ class RawViewQuestionStatTemplate:
 
 class QueryViewQuestionStatTemplate:
     question = models.ForeignKey(
-        "Question", on_delete=models.DO_NOTHING, related_name="question", primary_key=True
+        "Question",
+        on_delete=models.DO_NOTHING,
+        related_name="question",
+        primary_key=True,
     )
     total_choices = models.IntegerField()
 
     @staticmethod
     def view_definition():
         return str(
-            apps.get_model(
-                'test_app', 'Question'
-            ).objects.values("id").annotate(total_choices=models.Count("choices"), question_id=F("id")).query
+            apps.get_model("test_app", "Question")
+            .objects.values("id")
+            .annotate(total_choices=models.Count("choices"), question_id=F("id"))
+            .query
         )
 
     class Meta:
@@ -109,16 +118,16 @@ class MultipleDBQueryViewQuestionStatTemplate:
 
     @staticmethod
     def view_definition():
-        queryset = apps.get_model(
-                    'test_app', 'Question'
-                ).objects.values("id").annotate(total_choices=models.Count("choices"), question_id=F("id"))
+        queryset = (
+            apps.get_model("test_app", "Question")
+            .objects.values("id")
+            .annotate(total_choices=models.Count("choices"), question_id=F("id"))
+        )
         return {
             "django.db.backends.mysql": str(
                 queryset.query.get_compiler("mysql").as_sql()[0]
             ),
-            "django.db.backends.postgresql": str(
-                queryset.query
-            )
+            "django.db.backends.postgresql": str(queryset.query),
         }
 
     class Meta:
@@ -152,6 +161,4 @@ class SimpleMaterializedViewWithIndexTemplate:
         managed = False
         db_table = "simple_materialized_view_without_dependencies"
         # only django 3.2 +
-        indexes = [
-            Index(fields=['current_date_time'])
-        ]
+        indexes = [Index(fields=["current_date_time"])]

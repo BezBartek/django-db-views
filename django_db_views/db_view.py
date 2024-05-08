@@ -9,17 +9,20 @@ DBViewsRegistry = {}
 class DBViewModelBase(ModelBase):
     def __new__(cls, *args, **kwargs):
         new_class = super().__new__(cls, *args, **kwargs)
-        assert new_class._meta.managed is False, "For DB View managed must be se to false"
+        assert (
+            new_class._meta.managed is False
+        ), "For DB View managed must be se to false"
         DBViewsRegistry[new_class._meta.db_table] = new_class
         return new_class
 
 
 class DBView(models.Model, metaclass=DBViewModelBase):
     """
-        Children should define:
-            view_definition - define the view, can be callable or attribute (string)
-            view definition can be per db engine.
+    Children should define:
+        view_definition - define the view, can be callable or attribute (string)
+        view definition can be per db engine.
     """
+
     view_definition: Union[Callable, str, dict]
 
     class Meta:
@@ -40,6 +43,8 @@ class DBMaterializedView(DBView):
         using = using or DEFAULT_DB_ALIAS
         with connections[using].cursor() as cursor:
             if concurrently:
-                cursor.execute("REFRESH MATERIALIZED VIEW CONCURRENTLY %s;" % cls._meta.db_table)
+                cursor.execute(
+                    "REFRESH MATERIALIZED VIEW CONCURRENTLY %s;" % cls._meta.db_table
+                )
             else:
                 cursor.execute("REFRESH MATERIALIZED VIEW %s;" % cls._meta.db_table)

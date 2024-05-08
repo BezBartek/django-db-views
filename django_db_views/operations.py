@@ -3,7 +3,10 @@ from django.db.migrations.state import ModelState
 
 from django_db_views.context_manager import VIEW_MIGRATION_CONTEXT
 from django_db_views.db_view import DBView, DBMaterializedView
-from django_db_views.migration_functions import ForwardMaterializedViewMigration, ForwardViewMigration
+from django_db_views.migration_functions import (
+    ForwardMaterializedViewMigration,
+    ForwardViewMigration,
+)
 
 
 def get_table_engine_name_hash(table_name, engine):
@@ -12,13 +15,14 @@ def get_table_engine_name_hash(table_name, engine):
 
 class DBViewModelState(ModelState):
     def __init__(
-            self, *args,
-            # Not required cus migrate also load state using clone method that do not provide required by us fields.
-            view_engine: str = None,
-            view_definition: str = None,
-            table_name: str = None,
-            base_class=None,
-            **kwargs
+        self,
+        *args,
+        # Not required cus migrate also load state using clone method that do not provide required by us fields.
+        view_engine: str = None,
+        view_definition: str = None,
+        table_name: str = None,
+        base_class=None,
+        **kwargs,
     ):
         super().__init__(*args, **kwargs)
         if VIEW_MIGRATION_CONTEXT["is_view_migration"]:
@@ -29,7 +33,6 @@ class DBViewModelState(ModelState):
 
 
 class ViewRunPython(operations.RunPython):
-
     def state_forwards(self, app_label, state):
         if VIEW_MIGRATION_CONTEXT["is_view_migration"]:
             if isinstance(self.code, ForwardMaterializedViewMigration):
@@ -42,7 +45,9 @@ class ViewRunPython(operations.RunPython):
                 DBViewModelState(
                     app_label,
                     # Hash table_name_engine_name to add state model per migration, which are added per engine.
-                    get_table_engine_name_hash(self.code.table_name, self.code.view_engine),
+                    get_table_engine_name_hash(
+                        self.code.table_name, self.code.view_engine
+                    ),
                     list(),
                     dict(),
                     # we do not use django bases (they initialize model using that, and broke ViewRegistry),
@@ -52,13 +57,15 @@ class ViewRunPython(operations.RunPython):
                     view_engine=self.code.view_engine,
                     view_definition=self.code.view_definition,
                     base_class=model,
-                    table_name=self.code.table_name
+                    table_name=self.code.table_name,
                 )
             )
 
 
 class ViewDropRunPython(operations.RunPython):
-
     def state_forwards(self, app_label, state):
         if VIEW_MIGRATION_CONTEXT["is_view_migration"]:
-            state.remove_model(app_label, get_table_engine_name_hash(self.code.table_name, self.code.view_engine))
+            state.remove_model(
+                app_label,
+                get_table_engine_name_hash(self.code.table_name, self.code.view_engine),
+            )

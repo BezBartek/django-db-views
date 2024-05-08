@@ -8,5 +8,11 @@ def roll_back_schema(test_function):
         try:
             test_function(*args, **kwargs)
         finally:
-            call_command("migrate", "test_app", "zero", database=kwargs.get("database", "default"))
+            call_command(
+                "migrate",
+                "test_app",
+                "zero",
+                database=kwargs.get("database", "default"),
+            )
+
     return decorated_test
