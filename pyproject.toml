@@ -37,7 +37,8 @@ classifiers=[
 ]
 py_modules = ["six"]
 dependencies = [
-  "django>=2.2"
+    "six",
+    "django>=2.2"
 ]
 
 [project.urls]
