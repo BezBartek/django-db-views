@@ -16,7 +16,7 @@ jobs:
         with:
           python-version: '3.11'
       - name: Install dependencies
-        run: pip install -r requirements.txt
+        run: pip install .[dev]
       - name: Run linter
         run: pre-commit run --all-files
 
@@ -33,6 +33,6 @@ jobs:
       - name: Set up test databases
         run: docker compose up -d
       - name: install dependencies
-        run: pip install -r requirements.txt
+        run: pip install .[tests]
       - name: run tests
         run: tox
