@@ -1,6 +1,6 @@
 # Makefile
 build:
-	python setup.py sdist bdist_wheel
+	python -m build
 
 check:
 	twine check dist/*

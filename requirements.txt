@@ -7,3 +7,4 @@ mysqlclient==2.2.1
 pytest-mock==3.8.2
 tox==3.25.1
 pre-commit==3.6.0
+build==1.2.1
