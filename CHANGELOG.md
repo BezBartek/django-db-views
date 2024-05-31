@@ -5,6 +5,9 @@ Changelogs starts from version 0.1.3
 
 ## Released
 
+### [0.1.8]
+- Sqlmigrate command shows sql definitions of a view models
+
 ### [0.1.7]
 - Support for reading ViewRunPython operations from SeparateDatabaseAndState operations
 

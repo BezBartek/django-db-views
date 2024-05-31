@@ -33,6 +33,8 @@ class DBViewModelState(ModelState):
 
 
 class ViewRunPython(operations.RunPython):
+    reduces_to_sql = True
+
     def state_forwards(self, app_label, state):
         if VIEW_MIGRATION_CONTEXT["is_view_migration"]:
             if isinstance(self.code, ForwardMaterializedViewMigration):
@@ -60,6 +62,9 @@ class ViewRunPython(operations.RunPython):
                     table_name=self.code.table_name,
                 )
             )
+
+    def describe(self):
+        return "View migration operation"
 
 
 class ViewDropRunPython(operations.RunPython):
