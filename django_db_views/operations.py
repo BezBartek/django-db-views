@@ -63,6 +63,9 @@ class ViewRunPython(operations.RunPython):
                 )
             )
 
+    def describe(self):
+        return "View migration operation"
+
 
 class ViewDropRunPython(operations.RunPython):
     def state_forwards(self, app_label, state):

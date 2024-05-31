@@ -1,3 +1,5 @@
+from io import StringIO
+
 import pytest
 from django.apps import apps
 from django.core.management import call_command
@@ -307,3 +309,19 @@ def test_support_view_migrations_wrapped_in_sparate_database_and_state(
     # check that backward capability works
     call_command("migrate", "test_app", "0001")
     assert SimpleViewWithoutDependencies.objects.all().count() == 2
+
+
+@pytest.mark.django_db(transaction=True)
+@roll_back_schema
+def test_view_migration_is_visible_for_sqlmigrate_command(
+    temp_migrations_dir, SimpleViewWithoutDependencies
+):
+    call_command("makeviewmigrations", "test_app")
+    assert (temp_migrations_dir / "0001_initial.py").exists()
+    output_buffer = StringIO()
+    call_command("sqlmigrate", "test_app", "0001", stdout=output_buffer)
+    output_buffer.seek(0)
+    output = output_buffer.read()
+    assert "-- View migration operation" in output
+    assert "DROP VIEW IF EXISTS test_app_simpleviewwithoutdependencies;" in output
+    assert "CREATE VIEW test_app_simpleviewwithoutdependencies" in output
