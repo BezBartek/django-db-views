@@ -11,7 +11,7 @@ class DBViewModelBase(ModelBase):
         new_class = super().__new__(cls, *args, **kwargs)
         assert (
             new_class._meta.managed is False
-        ), "For DB View managed must be se to false"
+        ), "For DB View managed must be set to false"
         DBViewsRegistry[new_class._meta.db_table] = new_class
         return new_class
 
