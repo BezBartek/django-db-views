@@ -12,7 +12,8 @@ class DBViewModelBase(ModelBase):
         assert (
             new_class._meta.managed is False
         ), "For DB View managed must be set to false"
-        DBViewsRegistry[new_class._meta.db_table] = new_class
+        if not new_class._meta.abstract:
+            DBViewsRegistry[new_class._meta.db_table] = new_class
         return new_class
 
 

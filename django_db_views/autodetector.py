@@ -168,7 +168,8 @@ class ViewMigrationAutoDetector(MigrationAutodetector):
                 view_models[key] = model_state
         return view_models
 
-    def get_current_view_models(self):
+    @staticmethod
+    def get_current_view_models():
         view_models = {}
         for app_label, models in apps.all_models.items():
             for model_name, model_class in models.items():
@@ -229,7 +230,8 @@ class ViewMigrationAutoDetector(MigrationAutodetector):
                         dependencies=dependencies,
                     )
 
-    def get_forward_migration_class(self, model) -> Type[ForwardViewMigrationBase]:
+    @staticmethod
+    def get_forward_migration_class(model) -> Type[ForwardViewMigrationBase]:
         if issubclass(model, DBMaterializedView):
             return ForwardMaterializedViewMigration
         if issubclass(model, DBView):
@@ -237,7 +239,8 @@ class ViewMigrationAutoDetector(MigrationAutodetector):
         else:
             raise NotImplementedError
 
-    def get_backward_migration_class(self, model) -> Type[BackwardViewMigrationBase]:
+    @staticmethod
+    def get_backward_migration_class(model) -> Type[BackwardViewMigrationBase]:
         if issubclass(model, DBMaterializedView):
             return BackwardMaterializedViewMigration
         if issubclass(model, DBView):
@@ -253,7 +256,8 @@ class ViewMigrationAutoDetector(MigrationAutodetector):
         else:
             raise NotImplementedError
 
-    def get_view_definition_from_model(self, view_model: DBView) -> dict:
+    @classmethod
+    def get_view_definition_from_model(cls, view_model: DBView) -> dict:
         view_definitions = {}
         if callable(view_model.view_definition):
             raw_view_definition = view_model.view_definition()
@@ -262,12 +266,12 @@ class ViewMigrationAutoDetector(MigrationAutodetector):
 
         if isinstance(raw_view_definition, dict):
             for engine, definition in raw_view_definition.items():
-                view_definitions[engine] = self.get_cleaned_view_definition_value(
+                view_definitions[engine] = cls.get_cleaned_view_definition_value(
                     definition
                 )
         else:
             engine = settings.DATABASES["default"]["ENGINE"]
-            view_definitions[engine] = self.get_cleaned_view_definition_value(
+            view_definitions[engine] = cls.get_cleaned_view_definition_value(
                 raw_view_definition
             )
         return view_definitions
@@ -337,7 +341,8 @@ class ViewMigrationAutoDetector(MigrationAutodetector):
             engine = settings.DATABASES["default"]["ENGINE"]
         return table_name, engine
 
-    def get_cleaned_view_definition_value(self, view_definition: str) -> str:
+    @staticmethod
+    def get_cleaned_view_definition_value(view_definition: str) -> str:
         assert isinstance(
             view_definition, str
         ), "View definition must be callable and return string or be itself a string."

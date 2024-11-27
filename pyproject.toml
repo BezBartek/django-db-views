@@ -76,6 +76,9 @@ include = [
 
 [tool.pytest.ini_options]
 addopts = "--migrations --create-db"
+env = [
+    "PYTHONDONTWRITEBYTECODE = 1"
+]
 
 [tool.tox]
 legacy_tox_ini = """
