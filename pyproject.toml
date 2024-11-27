@@ -97,7 +97,7 @@ setenv =
 conda_deps =
     psycopg2
     pytest-django
-    mysqlclient
+    mysqlclient==2.2.1
     pytest-mock
 deps =
     django-environ==0.9.0
