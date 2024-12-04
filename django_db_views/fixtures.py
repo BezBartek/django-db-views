@@ -9,15 +9,16 @@ except ImportError:
     raise Exception("fixtures are available only for pytest.")
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(autouse=True, scope="session")
 def django_db_views_setup(
+    django_db_setup,
     request,
     django_db_blocker,
     django_db_use_migrations: bool,
     django_db_keepdb: bool,
 ) -> None:
     def no_migrations_tear_up() -> None:
-        view_models = ViewMigrationAutoDetector.get_current_view_models()
+        view_models = ViewMigrationAutoDetector.get_current_view_models().values()
         with django_db_blocker.unblock(), connection.schema_editor() as schema_editor:
             engine = schema_editor.connection.settings_dict["ENGINE"]
             for view_model in view_models:
