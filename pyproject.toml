@@ -1,6 +1,6 @@
 [project]
 name = "django-db-views"
-version = "0.1.8"
+version = "0.1.9"
 description = """
     Handle database views.
     Allow to create migrations for database views.
@@ -76,6 +76,9 @@ include = [
 
 [tool.pytest.ini_options]
 addopts = "--migrations --create-db"
+env = [
+    "PYTHONDONTWRITEBYTECODE = 1"
+]
 
 [tool.tox]
 legacy_tox_ini = """
@@ -94,7 +97,7 @@ setenv =
 conda_deps =
     psycopg2
     pytest-django
-    mysqlclient
+    mysqlclient==2.2.1
     pytest-mock
 deps =
     django-environ==0.9.0
