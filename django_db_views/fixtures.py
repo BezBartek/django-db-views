@@ -18,10 +18,10 @@ def django_db_views_setup(
     django_db_keepdb: bool,
 ) -> None:
     def no_migrations_tear_up() -> None:
-        view_models = ViewMigrationAutoDetector.get_current_view_models().values()
+        view_models = ViewMigrationAutoDetector.get_current_view_models()
         with django_db_blocker.unblock(), connection.schema_editor() as schema_editor:
             engine = schema_editor.connection.settings_dict["ENGINE"]
-            for view_model in view_models:
+            for view_model in view_models.values():
                 view_definition = (
                     ViewMigrationAutoDetector.get_view_definition_from_model(
                         view_model
@@ -41,7 +41,7 @@ def django_db_views_setup(
         view_models = ViewMigrationAutoDetector.get_current_view_models()
         with django_db_blocker.unblock(), connection.schema_editor() as schema_editor:
             engine = schema_editor.connection.settings_dict["ENGINE"]
-            for view_model in view_models:
+            for view_model in view_models.values():
                 backward_migration = (
                     ViewMigrationAutoDetector.get_backward_migration_class(view_model)(
                         "",
