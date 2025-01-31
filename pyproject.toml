@@ -1,6 +1,6 @@
 [project]
 name = "django-db-views"
-version = "0.1.10"
+version = "0.1.11"
 description = """
     Handle database views.
     Allow to create migrations for database views.
@@ -85,7 +85,7 @@ legacy_tox_ini = """
 [tox]
 isolated_build = True
 requires = tox-conda
-envlist = py39-dj{22,32,40,41}, py310-dj{22,32,40,41,42,50}, py311-dj{22,32,40,41,42,50}
+envlist = py39-dj{22,32,40,41}, py310-dj{22,32,40,41,42,50}, py311-dj{22,32,40,41,42,50}, py312-dj{42,50,51}, py313-dj{42,50,51}
 
 [testenv]
 conda_channels=

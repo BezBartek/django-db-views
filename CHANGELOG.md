@@ -5,6 +5,9 @@ Changelogs starts from version 0.1.3
 
 ## Released
 
+### [0.1.11]
+- use sqlparse to detect view changes
+
 ### [0.1.10]
 - fix no_migrations_teardown at django_db_views_setup fixture
 
