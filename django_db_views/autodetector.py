@@ -1,9 +1,8 @@
-import re
-from itertools import zip_longest
 from typing import Type
 
 import django
 import six
+import sqlparse
 from django.apps import apps
 from django.conf import settings
 from django.db import connection, ProgrammingError
@@ -178,21 +177,19 @@ class ViewMigrationAutoDetector(MigrationAutodetector):
                     view_models[key] = model_class
         return view_models
 
-    def is_same_views(self, current: str, new: str) -> bool:
-        if not current:
-            return False
-        s1_words = filter(
-            lambda x: len(x) != 0, re.split(pattern="[^a-zA-Z]*", string=current)
-        )
-        s2_words = filter(
-            lambda x: len(x) != 0, re.split(pattern="[^a-zA-Z]*", string=new)
-        )
-        for w1, w2 in zip_longest(s1_words, s2_words):
-            if not w1 or not w2:
-                return False
-            if w1.lower() != w2.lower():
-                return False
-        return True
+    @staticmethod
+    def is_same_views(current: str, new: str) -> bool:
+        def sql_normalize(s: str) -> str:
+            return sqlparse.format(
+                s,
+                compact=True,
+                keyword_case="upper",
+                identifier_case="lower",
+                reindent=True,
+                strip_comments=True,
+            ).strip()
+
+        return sql_normalize(current) == sql_normalize(new)
 
     def generate_views_operations(self, graph: MigrationGraph) -> None:
         view_models = self.get_current_view_models()
