@@ -6,27 +6,27 @@ import django
 import six
 from django.apps import apps
 from django.conf import settings
-from django.db import connection, ProgrammingError
+from django.db import ProgrammingError, connection
 from django.db.migrations import SeparateDatabaseAndState
 from django.db.migrations.autodetector import MigrationAutodetector
 from django.db.migrations.graph import MigrationGraph
 
-from django_db_views.db_view import DBView, DBMaterializedView, DBViewsRegistry
+from django_db_views.db_view import DBMaterializedView, DBView, DBViewsRegistry
+from django_db_views.migration_functions import (
+    BackwardMaterializedViewMigration,
+    BackwardViewMigration,
+    BackwardViewMigrationBase,
+    DropMaterializedView,
+    DropView,
+    DropViewMigration,
+    ForwardMaterializedViewMigration,
+    ForwardViewMigration,
+    ForwardViewMigrationBase,
+)
 from django_db_views.operations import (
-    ViewRunPython,
     DBViewModelState,
     ViewDropRunPython,
-)
-from django_db_views.migration_functions import (
-    ForwardViewMigration,
-    BackwardViewMigration,
-    ForwardMaterializedViewMigration,
-    BackwardMaterializedViewMigration,
-    ForwardViewMigrationBase,
-    BackwardViewMigrationBase,
-    DropView,
-    DropMaterializedView,
-    DropViewMigration,
+    ViewRunPython,
 )
 
 
@@ -211,6 +211,29 @@ class ViewMigrationAutoDetector(MigrationAutodetector):
                         if isinstance(base, six.string_types) and "." in base:
                             base_app_label, base_name = base.split(".", 1)
                             dependencies.append((base_app_label, base_name, None, True))
+
+                    dependent_models = getattr(view_model, "dependent_models", None)
+
+                    if dependent_models:
+                        for model in dependent_models:
+                            app, model_name = model.split(".")
+                            dependent_model = apps.get_model(app, model_name)
+
+                            self.add_operation(
+                                app_label,
+                                ViewDropRunPython(
+                                    DropView(
+                                        dependent_model._meta.db_table, engine=engine
+                                    ),
+                                    BackwardViewMigration(
+                                        dependent_model.view_definition().strip(";"),
+                                        dependent_model._meta.db_table,
+                                        engine=engine,
+                                    ),
+                                    atomic=False,
+                                ),
+                            )
+
                     self.add_operation(
                         app_label,
                         ViewRunPython(
@@ -228,6 +251,25 @@ class ViewMigrationAutoDetector(MigrationAutodetector):
                         ),
                         dependencies=dependencies,
                     )
+                    if dependent_models:
+                        for model in reversed(dependent_models):
+                            app, model_name = model.split(".")
+                            dependent_model = apps.get_model(app, model_name)
+                            self.add_operation(
+                                app_label,
+                                ViewRunPython(
+                                    ForwardViewMigration(
+                                        dependent_model.view_definition().strip(";"),
+                                        dependent_model._meta.db_table,
+                                        engine=engine,
+                                    ),
+                                    DropView(
+                                        dependent_model._meta.db_table,
+                                        engine=engine,
+                                    ),
+                                    atomic=False,
+                                ),
+                            )
 
     def get_forward_migration_class(self, model) -> Type[ForwardViewMigrationBase]:
         if issubclass(model, DBMaterializedView):

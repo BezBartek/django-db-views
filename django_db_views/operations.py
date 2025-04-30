@@ -2,7 +2,7 @@ from django.db.migrations import operations
 from django.db.migrations.state import ModelState
 
 from django_db_views.context_manager import VIEW_MIGRATION_CONTEXT
-from django_db_views.db_view import DBView, DBMaterializedView
+from django_db_views.db_view import DBMaterializedView, DBView
 from django_db_views.migration_functions import (
     ForwardMaterializedViewMigration,
     ForwardViewMigration,
@@ -70,7 +70,14 @@ class ViewRunPython(operations.RunPython):
 class ViewDropRunPython(operations.RunPython):
     def state_forwards(self, app_label, state):
         if VIEW_MIGRATION_CONTEXT["is_view_migration"]:
+            if app_label not in self.code.table_name:
+                app_label = "_".join(self.code.table_name.split("_")[:-1])
+                table_name = self.code.table_name.split("_")[-1]
+            else:
+                table_name = get_table_engine_name_hash(
+                    self.code.table_name, self.code.view_engine
+                )
             state.remove_model(
                 app_label,
-                get_table_engine_name_hash(self.code.table_name, self.code.view_engine),
+                table_name,
             )

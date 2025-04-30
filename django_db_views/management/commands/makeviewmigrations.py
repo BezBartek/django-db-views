@@ -1,10 +1,12 @@
 import sys
 
 from django.apps import apps
+from django.core.management.commands.makemigrations import (
+    Command as MakemigrationsCommand,
+)
 from django.db.migrations.loader import MigrationLoader
 from django.db.migrations.questioner import InteractiveMigrationQuestioner
 from django.db.migrations.state import ProjectState
-from django.core.management.commands.makemigrations import Command as MakemigrationsCommand
 
 from django_db_views.autodetector import ViewMigrationAutoDetector
 from django_db_views.context_manager import view_migration_context
@@ -14,34 +16,50 @@ class Command(MakemigrationsCommand):
     help = "Creates new database view migration(s) for apps."
 
     def add_arguments(self, parser):
-        """"
-            Not support all operations like makemigrations command,
-            part of them have no sens here, like no-input or empty.
+        """ "
+        Not support all operations like makemigrations command,
+        part of them have no sens here, like no-input or empty.
         """
         parser.add_argument(
-            'args', metavar='app_label', nargs='*',
-            help='Specify the app label(s) to create migrations for.',
-        )   # Working
+            "args",
+            metavar="app_label",
+            nargs="*",
+            help="Specify the app label(s) to create migrations for.",
+        )  # Working
         parser.add_argument(
-            '--dry-run', action='store_true', dest='dry_run', default=False,
+            "--dry-run",
+            action="store_true",
+            dest="dry_run",
+            default=False,
             help="Just show what migrations would be made; don't actually write them.",
-        )   # Working
+        )  # Working
         parser.add_argument(
-            '--merge', action='store_true', dest='merge', default=False,
+            "--merge",
+            action="store_true",
+            dest="merge",
+            default=False,
             help="Enable fixing of migration conflicts.",
-        )   # we need that?
+        )  # we need that?
         parser.add_argument(
-            '-n', '--name', action='store', dest='name', default=None,
+            "-n",
+            "--name",
+            action="store",
+            dest="name",
+            default=None,
             help="Use this name for migration file(s).",
-        )   # Working
+        )  # Working
         parser.add_argument(
-            '--no-header', action='store_false', dest='include_header',
-            help='Do not add header comments to new migration file(s). (working only with Django 2.2)',
+            "--no-header",
+            action="store_false",
+            dest="include_header",
+            help="Do not add header comments to new migration file(s). (working only with Django 2.2)",
         )
         parser.add_argument(
-            '--check', action='store_true', dest='check_changes',
-            help='Exit with a non-zero status if model changes are missing migrations.',
-        )   # we need that?
+            "--check",
+            action="store_true",
+            dest="check_changes",
+            help="Exit with a non-zero status if model changes are missing migrations.",
+        )  # we need that?
         parser.add_argument(
             "--scriptable",
             action="store_true",
@@ -56,13 +74,13 @@ class Command(MakemigrationsCommand):
     def handle(self, *app_labels, **options):
         # get supported options.
         self.written_files = []
-        self.verbosity = options['verbosity']
-        self.dry_run = options['dry_run']
-        self.merge = options['merge']
-        self.migration_name = options['name']
-        self.include_header = options['include_header']
-        self.scriptable = options['scriptable']
-        check_changes = options['check_changes']
+        self.verbosity = options["verbosity"]
+        self.dry_run = options["dry_run"]
+        self.merge = options["merge"]
+        self.migration_name = options["name"]
+        self.include_header = options["include_header"]
+        self.scriptable = options["scriptable"]
+        check_changes = options["check_changes"]
 
         # validation application labels
         app_labels = set(app_labels)
@@ -81,7 +99,9 @@ class Command(MakemigrationsCommand):
         autodetector = ViewMigrationAutoDetector(
             from_state,
             to_state,
-            questioner=InteractiveMigrationQuestioner(specified_apps=app_labels, dry_run=self.dry_run)
+            questioner=InteractiveMigrationQuestioner(
+                specified_apps=app_labels, dry_run=self.dry_run
+            ),
         )
 
         changes = autodetector.changes(
@@ -96,9 +116,13 @@ class Command(MakemigrationsCommand):
             # No changes? Tell them.
             if self.verbosity >= 1:
                 if len(app_labels) == 1:
-                    self.stdout.write("No changes detected in app '%s'" % app_labels.pop())
+                    self.stdout.write(
+                        "No changes detected in app '%s'" % app_labels.pop()
+                    )
                 elif len(app_labels) > 1:
-                    self.stdout.write("No changes detected in apps '%s'" % ("', '".join(app_labels)))
+                    self.stdout.write(
+                        "No changes detected in apps '%s'" % ("', '".join(app_labels))
+                    )
                 else:
                     self.stdout.write("No changes detected")
 

@@ -1,6 +1,6 @@
-from typing import Union, Callable
+from typing import Callable, Union
 
-from django.db import models, connections, DEFAULT_DB_ALIAS
+from django.db import DEFAULT_DB_ALIAS, connections, models
 from django.db.models.base import ModelBase
 
 DBViewsRegistry = {}
@@ -24,6 +24,8 @@ class DBView(models.Model, metaclass=DBViewModelBase):
     """
 
     view_definition: Union[Callable, str, dict]
+    dependent_models: list | None
+    depends_on: list | None
 
     class Meta:
         managed = False
