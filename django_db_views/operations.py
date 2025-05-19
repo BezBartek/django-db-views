@@ -43,6 +43,10 @@ class ViewRunPython(operations.RunPython):
                 model = DBView
             else:
                 raise NotImplementedError
+
+            if app_label not in self.code.table_name:
+                app_label = "_".join(self.code.table_name.split("_")[:-1])
+
             state.add_model(
                 DBViewModelState(
                     app_label,
@@ -72,12 +76,8 @@ class ViewDropRunPython(operations.RunPython):
         if VIEW_MIGRATION_CONTEXT["is_view_migration"]:
             if app_label not in self.code.table_name:
                 app_label = "_".join(self.code.table_name.split("_")[:-1])
-                table_name = self.code.table_name.split("_")[-1]
-            else:
-                table_name = get_table_engine_name_hash(
-                    self.code.table_name, self.code.view_engine
-                )
+
             state.remove_model(
                 app_label,
-                table_name,
+                get_table_engine_name_hash(self.code.table_name, self.code.view_engine),
             )
