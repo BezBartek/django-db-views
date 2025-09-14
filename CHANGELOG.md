@@ -5,6 +5,9 @@ Changelogs starts from version 0.1.3
 
 ## Released
 
+### [0.1.12]
+- quote view names at migrations as django does with table names.
+
 ### [0.1.11]
 - use sqlparse to detect view changes
 

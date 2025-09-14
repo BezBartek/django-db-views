@@ -162,3 +162,19 @@ class SimpleMaterializedViewWithIndexTemplate:
         db_table = "simple_materialized_view_without_dependencies"
         # only django 3.2 +
         indexes = [Index(fields=["current_date_time"])]
+
+
+class ViewOnSpecificSchemaTemplate:
+    identifier = models.IntegerField(primary_key=True)
+    name = models.TextField()
+
+    view_definition = """
+              Select *
+                 From  (values (1, 'dummy_1')
+                              ,(2, 'dummy_2')
+                       ) A(id, name)
+            """
+
+    class Meta:
+        managed = False
+        db_table = 'extra_schema"."view_on_specific_schema'

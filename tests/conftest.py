@@ -19,6 +19,7 @@ def pytest_configure():
         "PASSWORD": env("POSTGRES_PASSWORD"),
         "HOST": env("POSTGRES_HOST"),
         "PORT": env("POSTGRES_PORT"),
+        "OPTIONS": {"options": "-c search_path=extra_schema,public"},
     }
     mysql_config = {
         "ENGINE": "django.db.backends.mysql",

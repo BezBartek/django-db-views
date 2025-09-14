@@ -1,4 +1,11 @@
+from typing import TypeVar
+
+from django.db.backends.postgresql.schema import BaseDatabaseSchemaEditor
+from django.db.migrations.state import StateApps
 from django.utils.deconstruct import deconstructible
+
+
+DatabaseSchemaEditor = TypeVar("DatabaseSchemaEditor", bound=BaseDatabaseSchemaEditor)
 
 
 class ViewMigration(object):
@@ -14,26 +21,31 @@ class ViewMigration(object):
 
 
 class ForwardViewMigrationBase(ViewMigration):
-    def __call__(self, apps, schema_editor):
+    def __call__(self, apps: StateApps, schema_editor: DatabaseSchemaEditor):
         if self.view_definition:
             if (
                 self.view_engine is None
                 or self.view_engine == schema_editor.connection.settings_dict["ENGINE"]
             ):
-                schema_editor.execute(self.DROP_COMMAND_TEMPLATE % self.table_name)
+                schema_editor.execute(
+                    self.DROP_COMMAND_TEMPLATE
+                    % schema_editor.quote_name(self.table_name)
+                )
                 schema_editor.execute(
                     self.CREATE_COMMAND_TEMPLATE
-                    % (self.table_name, self.view_definition)
+                    % (schema_editor.quote_name(self.table_name), self.view_definition)
                 )
 
 
 class BackwardViewMigrationBase(ViewMigration):
-    def __call__(self, apps, schema_editor):
+    def __call__(self, apps: StateApps, schema_editor: DatabaseSchemaEditor):
         if (
             self.view_engine is None
             or self.view_engine == schema_editor.connection.settings_dict["ENGINE"]
         ):
-            schema_editor.execute(self.DROP_COMMAND_TEMPLATE % self.table_name)
+            schema_editor.execute(
+                self.DROP_COMMAND_TEMPLATE % schema_editor.quote_name(self.table_name)
+            )
         if self.view_definition:
             if (
                 self.view_engine is None
@@ -41,7 +53,7 @@ class BackwardViewMigrationBase(ViewMigration):
             ):
                 schema_editor.execute(
                     self.CREATE_COMMAND_TEMPLATE
-                    % (self.table_name, self.view_definition)
+                    % (schema_editor.quote_name(self.table_name), self.view_definition)
                 )
 
 
@@ -76,12 +88,14 @@ class DropViewMigration(object):
         self.table_name = table_name
         self.view_engine = engine
 
-    def __call__(self, apps, schema_editor):
+    def __call__(self, apps: StateApps, schema_editor: DatabaseSchemaEditor):
         if (
             self.view_engine is None
             or self.view_engine == schema_editor.connection.settings_dict["ENGINE"]
         ):
-            schema_editor.execute(self.DROP_COMMAND_TEMPLATE % self.table_name)
+            schema_editor.execute(
+                self.DROP_COMMAND_TEMPLATE % schema_editor.quote_name(self.table_name)
+            )
 
 
 @deconstructible

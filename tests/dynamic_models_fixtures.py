@@ -12,6 +12,7 @@ from tests.test_app.models import (
     SimpleMaterializedViewWithoutDependenciesTemplate,
     SimpleMaterializedViewWithIndexTemplate,
     SecondSimpleViewWithoutDependenciesTemplate,
+    ViewOnSpecificSchemaTemplate,
 )
 
 
@@ -93,3 +94,10 @@ def SimpleMaterializedViewWithIndex():
     from django_db_views.db_view import DBMaterializedView
 
     return define_model(SimpleMaterializedViewWithIndexTemplate, DBMaterializedView)
+
+
+@pytest.fixture
+def ViewOnSpecificSchema():
+    from django_db_views.db_view import DBView
+
+    return define_model(ViewOnSpecificSchemaTemplate, DBView)
