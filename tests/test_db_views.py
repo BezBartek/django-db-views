@@ -3,6 +3,7 @@ from io import StringIO
 import pytest
 from django.apps import apps
 from django.core.management import call_command
+from django.db import connection
 
 from django_db_views.db_view import DBViewsRegistry
 from tests.asserts_utils import is_view_exists
@@ -323,5 +324,20 @@ def test_view_migration_is_visible_for_sqlmigrate_command(
     output_buffer.seek(0)
     output = output_buffer.read()
     assert "-- View migration operation" in output
-    assert "DROP VIEW IF EXISTS test_app_simpleviewwithoutdependencies;" in output
-    assert "CREATE VIEW test_app_simpleviewwithoutdependencies" in output
+    assert 'DROP VIEW IF EXISTS "test_app_simpleviewwithoutdependencies";' in output
+    assert 'CREATE VIEW "test_app_simpleviewwithoutdependencies"' in output
+
+
+@pytest.mark.django_db(transaction=False)
+@roll_back_schema
+def test_view_defined_on_schema(temp_migrations_dir, ViewOnSpecificSchema):
+    connection.cursor().execute("CREATE SCHEMA IF NOT EXISTS extra_schema;")
+    assert not (temp_migrations_dir / "0001_initial.py").exists()
+    assert not is_view_exists(ViewOnSpecificSchema._meta.db_table)
+    call_command("makeviewmigrations", "test_app")
+    assert (temp_migrations_dir / "0001_initial.py").exists()
+    call_command("migrate", "test_app")
+    assert is_view_exists(ViewOnSpecificSchema._meta.db_table)
+    assert ViewOnSpecificSchema.objects.all().count() == 2
+    call_command("migrate", "test_app", "zero")
+    assert not is_view_exists(ViewOnSpecificSchema._meta.db_table)

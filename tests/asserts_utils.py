@@ -13,4 +13,4 @@ def is_view_exists(view_name: str, using: str = "default") -> bool:
             for table in connections[using].introspection.get_table_list(cursor)
             if table.type == "v"
         ]
-        return view_name in views
+        return view_name.split('"."')[-1] in views
