@@ -85,7 +85,7 @@ legacy_tox_ini = """
 [tox]
 isolated_build = True
 requires = tox-conda
-envlist = py39-dj{22,32,40,41}, py310-dj{22,32,40,41,42,50}, py311-dj{22,32,40,41,42,50}, py312-dj{42,50,51,52}, py313-dj{52}
+envlist = py39-dj{22,32,40,41}, py310-dj{22,32,40,41,42,50}, py311-dj{22,32,40,41,42,50}, py312-dj{42,50,51,52}
 
 [testenv]
 conda_channels=
