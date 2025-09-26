@@ -1,6 +1,6 @@
 [project]
 name = "django-db-views"
-version = "0.1.12"
+version = "0.1.13"
 description = """
     Handle database views.
     Allow to create migrations for database views.
