@@ -1,6 +1,6 @@
 from typing import TypeVar
 
-from django.db.backends.postgresql.schema import BaseDatabaseSchemaEditor
+from django.db.backends.schema import BaseDatabaseSchemaEditor
 from django.db.migrations.state import StateApps
 from django.utils.deconstruct import deconstructible
 
