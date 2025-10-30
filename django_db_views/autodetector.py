@@ -209,6 +209,7 @@ class ViewMigrationAutoDetector(MigrationAutodetector):
                         if isinstance(base, six.string_types) and "." in base:
                             base_app_label, base_name = base.split(".", 1)
                             dependencies.append((base_app_label, base_name, None, True))
+                    dependencies += getattr(view_model, "dependencies", [])
                     self.add_operation(
                         app_label,
                         ViewRunPython(
