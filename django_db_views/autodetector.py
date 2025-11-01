@@ -10,6 +10,9 @@ from django.db.migrations import SeparateDatabaseAndState
 from django.db.migrations.autodetector import MigrationAutodetector
 from django.db.migrations.graph import MigrationGraph
 
+if django.VERSION >= (5, 1):
+    from django.db.migrations.autodetector import OperationDependency
+
 from django_db_views.db_view import DBView, DBMaterializedView, DBViewsRegistry
 from django_db_views.operations import (
     ViewRunPython,
@@ -208,7 +211,16 @@ class ViewMigrationAutoDetector(MigrationAutodetector):
                     for base in model_state.bases:
                         if isinstance(base, six.string_types) and "." in base:
                             base_app_label, base_name = base.split(".", 1)
-                            dependencies.append((base_app_label, base_name, None, True))
+                            if django.VERSION >= (5, 1):
+                                dependency = OperationDependency(
+                                    base_app_label,
+                                    base_name,
+                                    None,
+                                    OperationDependency.Type.CREATE,
+                                )
+                            else:
+                                dependency = (base_app_label, base_name, None, True)
+                            dependencies.append(dependency)
                     dependencies += getattr(view_model, "dependencies", [])
                     self.add_operation(
                         app_label,
