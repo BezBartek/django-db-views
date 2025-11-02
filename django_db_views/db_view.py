@@ -25,6 +25,7 @@ class DBView(models.Model, metaclass=DBViewModelBase):
     """
 
     view_definition: Union[Callable, str, dict]
+    dependencies: list
 
     class Meta:
         managed = False

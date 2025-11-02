@@ -5,6 +5,9 @@ Changelogs starts from version 0.1.3
 
 ## Released
 
+### [0.1.14]
+- Add ability to set custom dependencies, to cover what is required by query definition
+
 ### [0.1.13]
 - Fix dependency issue (on psycopg) introduced in 0.1.12.
 
