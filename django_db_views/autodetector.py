@@ -366,8 +366,7 @@ class ViewMigrationAutoDetector(MigrationAutodetector):
                 current_view_definition = cursor.fetchone()[0].strip()
             except ProgrammingError:  # VIEW NOT EXIST
                 current_view_definition = ""
-            finally:
-                return current_view_definition
+        return current_view_definition
 
     def detect_index_changes(self):
         pass
