@@ -2,9 +2,12 @@
 Changelogs starts from version 0.1.3
 
 ## Unreleased
-- Fix Python 3.14 `SyntaxWarning: 'return' in a 'finally' block` in the autodetector.
+
 
 ## Released
+
+## [0.1.15]
+- Fix Python 3.14 `SyntaxWarning: 'return' in a 'finally' block` in the autodetector.
 
 ### [0.1.14]
 - Add ability to set custom dependencies, to cover what is required by query definition
