@@ -2,6 +2,7 @@
 Changelogs starts from version 0.1.3
 
 ## Unreleased
+- Fix Python 3.14 `SyntaxWarning: 'return' in a 'finally' block` in the autodetector.
 
 ## Released
 
